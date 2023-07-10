@@ -1,10 +1,10 @@
-library(dirmult)
-library(phyloseq)
-library(dplyr)
-library(doParallel)
-library(parallelly)
-library(fitdistrplus)
-library(MASS)
+suppressMessages(library(dirmult))
+suppressMessages(library(phyloseq))
+suppressMessages(library(dplyr))
+suppressMessages(library(doParallel))
+suppressMessages(library(parallelly))
+suppressMessages(library(fitdistrplus))
+suppressMessages(library(MASS))
 
 rdirichlet <- function(dir_gamma, nSample, seed=2023){
   set.seed(seed)
@@ -57,8 +57,8 @@ estimate_param <- function(real_count_mat, seed=1){
 
 SimulateCount <- function (
   dirmult_composition, seqdepth_mean, seqdepth_theta, nSample = 100,
-  grp_ratio = 1, DA_avg_logfold=2, DA_sd_logfold=0.1, DA_proportion=0.2, seed=1, zinf=0.5,
-  DA_direction=c("balanced", "unbalanced"), DA_mode=c("abundant", "rare", "mixed") 
+  grp_ratio = 1, DA_avg_logfold=2, DA_sd_logfold=0, DA_proportion=0.2, seed=1, zinf=0.6,
+  DA_direction=c("enrich", "deplete", "mix"), DA_mode=c("abundant", "rare") 
 ){
   DA_direction <- match.arg(DA_direction)
   DA_mode <- match.arg(DA_mode)
@@ -79,23 +79,25 @@ SimulateCount <- function (
   # are all the DA taxa abundant/rare or a mix of both?
   # Note that the dirichlet distribution parameter has been sorted
   set.seed(2023) # fix the taxa which are DA
-  if (DA_mode == "mixed"){
-    DA_taxa <- sample.int(nTaxa, size=num_DAtaxa)
-  } else if(DA_mode == "abundant"){
-    DA_taxa <- sample(seq(1, round(nTaxa/4)), size=num_DAtaxa)
-  } else if(DA_mode == "rare"){
-    DA_taxa <- sample(seq(round(nTaxa*3/4), nTaxa), size=num_DAtaxa)
+  if(DA_mode == "abundant"){
+    DA_taxa <- seq(1, num_DAtaxa)
+  } else {
+    DA_taxa <- sample(seq(round(nTaxa*1/5)+1, nTaxa), size=num_DAtaxa)
   }
   
   set.seed(seed)
   log_fold_change_DA <- rnorm(n=num_DAtaxa, 
                               mean=DA_avg_logfold, 
                               sd=DA_sd_logfold) 
-  if (DA_direction == "balanced"){
-    # Are all the DA taxa changing ine one direction?
+  if (DA_direction == "mix"){
+    # Are all the DA taxa changing in one direction?
     direction <- rep(1, num_DAtaxa)
     direction[sample.int(num_DAtaxa, size=num_DAtaxa/2)] <- -1
     log_fold_change_DA <- log_fold_change_DA * direction
+  } else if (DA_direction == "enrich"){
+    log_fold_change_DA <- abs(log_fold_change_DA)
+  } else{ # deplete
+    log_fold_change_DA <- -abs(log_fold_change_DA)
   }
   
   log_fold_change <- rep(0, nTaxa)

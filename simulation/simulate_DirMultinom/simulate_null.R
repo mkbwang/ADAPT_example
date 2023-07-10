@@ -1,7 +1,7 @@
 
 remove(list=ls())
 
-folder <- '/home/wangmk/MDAWG/POLDA/simulation'
+folder <- '/home/wangmk/MDAWG/POLDA_example/simulation'
 source(file.path(folder, "simulate_DirMultinom/utils.R"))
 
 
