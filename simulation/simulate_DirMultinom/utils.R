@@ -1,19 +1,6 @@
 suppressMessages(library(dirmult))
-suppressMessages(library(phyloseq))
 suppressMessages(library(dplyr))
-suppressMessages(library(doParallel))
-suppressMessages(library(parallelly))
-suppressMessages(library(fitdistrplus))
 suppressMessages(library(MASS))
-
-rdirichlet <- function(dir_gamma, nSample, seed=2023){
-  set.seed(seed)
-  # first generate gamma distribution
-  simulation <- sapply(dir_gamma, function(gamma_shape) rgamma(nSample, shape=gamma_shape, rate=1))
-  # then normalize to composition
-  composition <- apply(simulation, 1, function(sample_count) sample_count/sum(sample_count))
-  return(composition)
-}
 
 count_permutation <- function(real_count_mat, nSample=100, seed=1){
   # rows are taxa, columns are samples
@@ -27,123 +14,97 @@ count_permutation <- function(real_count_mat, nSample=100, seed=1){
 }
 
 
-estimate_param <- function(real_count_mat, seed=1){
-  # estimate dirichlet multinomial distribution parameter and library sizes based on real data
-  # taxa are rows
+## generate dirichlet distribution for two groups
+gen_dirparam <- function(baseline, propDA=0.1, balanced=T, enrich=F, seed=1){
+  stopifnot(propDA <= 0.2)
+  num_taxa <- length(baseline)
+  num_DAtaxa <- round(num_taxa * propDA)
+  param_20qt <- quantile(baseline, probs=0.2)
+  param_80qt <- quantile(baseline, probs=0.8)
+  rare_taxa_ID <- which(baseline < param_20qt)
+  prevalent_taxa_ID <- which(baseline > param_80qt)
+  
+  g1_gamma <- baseline
+  g2_gamma <- baseline
   set.seed(seed)
-  Nsample <- ncol(real_count_mat)
-  Ntaxa <- nrow(real_count_mat)
-  permuted_count <- count_permutation(real_count_mat = real_count_mat,
-                                      nSample = ncol(real_count_mat),
-                                      seed=seed)
-  
-  # negative binomial distribution for sequencing depths
-  permuted_depths <- colSums(permuted_count)
-  NB_depth_fit <- fitdist(permuted_depths, "nbinom")
-  NB_depth_mean <- NB_depth_fit$estimate[2]
-  NB_depth_theta <- NB_depth_fit$estimate[1]
-  
-  # estimate dirichlet multinomial distribution
-  dirichlet_param <- dirmult(t(permuted_count))
-  # sort the dirichlet parameters
-  dirichlet_gamma <- sort(dirichlet_param$gamma, decreasing=TRUE)
-  
-  result <- list(dirmult_composition=dirichlet_gamma,
-                 Seqdepth_mean=NB_depth_mean,
-                 Seqdepth_theta=NB_depth_theta)
+  if(balanced){ # some rare taxa enriched and some prevalent taxa depleted
+    DA_raretaxa_ID <- sample(rare_taxa_ID, size=num_DAtaxa/2)
+    raretaxa_gamma <- gamma_param[DA_raretaxa_ID]
+    DA_prevalenttaxa_ID <- sample(prevalent_taxa_ID, size=num_DAtaxa/2)
+    prevalenttaxa_gamma <- gamma_param[DA_prevalenttaxa_ID]
+    g2_gamma[DA_raretaxa_ID] <- sample(prevalenttaxa_gamma, size=num_DAtaxa/2)
+    g2_gamma[DA_prevalenttaxa_ID] <- sample(raretaxa_gamma, size=num_DAtaxa/2)
+  } else{# either rare taxa enriched or prevalent taxa depleted, one direction
+    DA_raretaxa_ID <- sample(rare_taxa_ID, size=num_DAtaxa)
+    raretaxa_gamma <- gamma_param[DA_raretaxa_ID]
+    DA_prevalenttaxa_ID <- sample(prevalent_taxa_ID, size=num_DAtaxa)
+    prevalenttaxa_gamma <- gamma_param[DA_prevalenttaxa_ID]
+    if (enrich){ # rare taxa get enriched
+      g2_gamma[DA_raretaxa_ID] <- sample(prevalenttaxa_gamma, size=num_DAtaxa)
+    } else{ # prevalent taxa get depleted
+      g2_gamma[DA_prevalenttaxa_ID] <- sample(raretaxa_gamma, size=num_DAtaxa)
+    }
+  }
+  result <- list(g1_gamma=g1_gamma, g2_gamma=g2_gamma, log_fold_change = log(g2_gamma/g1_gamma))
+  return(result)
 }
 
 
 
 SimulateCount <- function (
-  dirmult_composition, seqdepth_mean, seqdepth_theta, nSample = 100,
-  grp_ratio = 1, DA_avg_logfold=2, DA_sd_logfold=0, DA_proportion=0.2, seed=1, zinf=0.6,
-  DA_direction=c("enrich", "deplete", "mix"), DA_mode=c("abundant", "rare") 
+  dirmult_composition, seqdepth_mean, seqdepth_theta=10, nSample = 100,
+  grp_ratio = 1, DA_proportion=0.1, seed=1,
+  DA_direction=c("enrich", "deplete", "mix")
 ){
   DA_direction <- match.arg(DA_direction)
-  DA_mode <- match.arg(DA_mode)
-  if(DA_proportion >= 0.5){
-    stop("The number of DA taxa should not exceed half of all the taxa!")
+  if(DA_proportion > 0.2){
+    stop("The number of DA taxa should not exceed 20% of all the taxa!")
   }
   # simulate count based on given baseline composition parameter and sequencing depth parameters
   nTaxa <- length(dirmult_composition)
   grp_proportion <- grp_ratio / (grp_ratio + 1) # the sample proportion in two constrasting groups
   
-  # sets up the binary covariate
-  covariate <- rep(0, nSample)
-  set.seed(seed)
-  covariate[sample.int(nSample, nSample*grp_proportion)] <- 1
+  # separate the samples into two groups
+  g1_samplesize <- round(nSample * grp_proportion)
+  g2_samplesize <- nSample - g1_samplesize
+  
 
-  
-  num_DAtaxa <- round(nTaxa * DA_proportion)
-  # are all the DA taxa abundant/rare or a mix of both?
-  # Note that the dirichlet distribution parameter has been sorted
-  set.seed(2023) # fix the taxa which are DA
-  if(DA_mode == "abundant"){
-    DA_taxa <- seq(1, num_DAtaxa)
-  } else {
-    DA_taxa <- sample(seq(round(nTaxa*1/5)+1, nTaxa), size=num_DAtaxa)
-  }
-  
-  set.seed(seed)
-  log_fold_change_DA <- rnorm(n=num_DAtaxa, 
-                              mean=DA_avg_logfold, 
-                              sd=DA_sd_logfold) 
+  sim_dirparams <- NULL
   if (DA_direction == "mix"){
     # Are all the DA taxa changing in one direction?
-    direction <- rep(1, num_DAtaxa)
-    direction[sample.int(num_DAtaxa, size=num_DAtaxa/2)] <- -1
-    log_fold_change_DA <- log_fold_change_DA * direction
+    sim_dirparams <- gen_dirparam(baseline=dirmult_composition, propDA=DA_proportion, balanced=T, seed=seed)
   } else if (DA_direction == "enrich"){
-    log_fold_change_DA <- abs(log_fold_change_DA)
+    sim_dirparams <- gen_dirparam(baseline=dirmult_composition, propDA=DA_proportion, balanced=F, enrich = T, seed=seed)
   } else{ # deplete
-    log_fold_change_DA <- -abs(log_fold_change_DA)
+    sim_dirparams <- gen_dirparam(baseline=dirmult_composition, propDA=DA_proportion, balanced=F, enrich = F, seed=seed)
   }
   
-  log_fold_change <- rep(0, nTaxa)
-  log_fold_change[DA_taxa] <- log_fold_change_DA
-  fold_change_mat <- exp(outer(log_fold_change, covariate))
+  # draw compositions from Dirichlet distributions
+  set.seed(seed)
+  g1_compositions <- rdirichlet(n=g1_samplesize, sim_dirparams$g1_gamma) |> t()
+  g2_compositions <- rdirichlet(n=g2_samplesize, sim_dirparams$g2_gamma) |> t()
+  all_compositions <- cbind(g1_compositions, g2_compositions)
   
-  sampled_compositions <- rdirichlet(dirmult_composition, nSample=nSample,
-                                     seed=seed)
-  # multiply the fold changes and renormalize
-  simulated_compositions <- sampled_compositions * fold_change_mat
-  simulated_compositions <- apply(simulated_compositions, 2, 
-                                  function(comp) comp/sum(comp))
   
-  sample_metadata <- data.frame(X=covariate, 
-                                row.names=sprintf("Indv_%d", seq(1, nSample)))
-  taxa_table <- data.frame(logfold = log_fold_change,
-                           row.names=sprintf("Taxon_%d", seq(1, nTaxa)))
-  simulation_depths <- rnegbin(n=nSample, mu=seqdepth_mean, theta=seqdepth_theta)
+  sim_metadata <- data.frame(Group=c(rep(0, g1_samplesize), rep(1, g2_samplesize)))
+  rownames(sim_metadata) <- sprintf("Indv%d", seq(1, nSample))
+  sim_taxainfo <- data.frame(Logfold=sim_dirparams$log_fold_change)
+  rownames(sim_taxainfo) <- sprintf("OTU%d", seq(1, nTaxa))
+  
+  
+  all_seqdepths <- rnegbin(n=nSample, mu=seqdepth_mean, theta=seqdepth_theta)
   # simulate count matrix
-  cores=parallelly::availableCores()
-  cl <- makeCluster(cores[1]-1) #not to overload your computer
-  registerDoParallel(cl)
-  simulated_counts <- foreach(j=1:nSample, .combine=cbind) %dopar%{
-    rmultinom(1, size=simulation_depths[j], prob=simulated_compositions[, j])
+  sim_otu_table <- matrix(0, nrow=nTaxa, ncol=nSample)
+  for (j in 1:nSample){
+    sim_otu_table[, j] <- rmultinom(1, size=all_seqdepths[j], prob=all_compositions[, j])
   }
-  stopCluster(cl)
+
+  rownames(sim_otu_table) <- sprintf("OTU%d", seq(1, nTaxa))
+  colnames(sim_otu_table) <- sprintf("Indv%d", seq(1, nSample))
   
-  # if there are too few zeros, sample entries and truncate them to zero
-  currentzeros <- mean(simulated_counts == 0)
-  if (currentzeros < zinf){
-    num_extrazeros <- round(length(simulated_counts) * (zinf - currentzeros) )
-    nonzero_entries <- which(simulated_counts != 0)
-    selected_entries <- sample(nonzero_entries, size=num_extrazeros,
-                                   prob=1 / simulated_counts[nonzero_entries])
-    simulated_counts[selected_entries] <- 0
-  }
-  
-  
-  rownames(simulated_counts) <- sprintf("Taxon_%d", seq(1, nTaxa))
-  colnames(simulated_counts) <- sprintf("Indv_%d", seq(1, nSample))
-  
-  output <- list(count_mat = simulated_counts,
-                 sample_metadata = sample_metadata,
-                 taxa_info = taxa_table)
+  output <- list(count_mat = sim_otu_table,
+                 sample_metadata = sim_metadata,
+                 taxa_info = sim_taxainfo)
   return(output)
 }
-
-
 
