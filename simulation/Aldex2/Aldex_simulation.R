@@ -1,131 +1,74 @@
 rm(list=ls())
-library(dplyr)
-library(ALDEx2)
+suppressMessages(library(ALDEx2))
 
-data_folder <- '/home/wangmk/MDAWG/POLDA/simulation/data'
-aldex_folder <- '/home/wangmk/MDAWG/POLDA/simulation/Aldex2'
+simulation_folder <- '/scratch/ligen_root/ligen0/wangmk/PTDA_example/simulation'
+data_folder <- file.path(simulation_folder, 'simulate_DirMultinom')
+aldex_folder <- file.path(simulation_folder, 'Aldex2')
 
-source(file.path(aldex_folder, "utils.R"))
-ID <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-
-
-# no DA taxa
-AGP_null <- readRDS(file.path(data_folder, "null",
-                              sprintf("AGP_simulation_null_%d.rds", ID)))
-taxa_info_null <- AGP_null$taxa_info
-sample_metadata_null <- AGP_null$sample_metadata
-aldex_null <- aldex(reads=AGP_null$count_mat,
-                    conditions=sample_metadata_null$X,
-                    test="t")
-performance_null <- evaluation(taxa_info_null, aldex_null, nullcase=TRUE)
-output_null <- list(performance=performance_null,
-                    aldex_result=aldex_null)
-saveRDS(output_null, 
-        file.path(aldex_folder, "null", 
-                  sprintf("summary_null_%d.rds", ID)))
+source(file.path(aldex_folder, "aldex2_utils.R"))
 
 
+library(optparse)
+option_list = list(
+  make_option(c("-n", "--nsample"), type="integer", default=100, 
+              help="Number of Samples [default=100]"),
+  make_option(c("-p", "--daprop"), type="double", default=0.1, 
+              help="DA taxa proportion [default=0.1]"),
+  make_option(c("-d", "--depth"), type="integer", default=1e5,
+              help="average sequencing depths [default=100,000]"),
+  make_option(c("-s", "--seed"), type="integer", default=1, 
+              help="seed [default=1]"),
+  make_option(c("-f", "--foldchange"), type="double", default=3, 
+              help="DA taxa proportion [default=3]"),
+  make_option(c("-m", "--mode"), type="character", default="mix", 
+              help="mode [default=mix]")
+)
 
-# rare DA taxa, low proportion(5%)
-AGP_unbalanced_rare_low <- readRDS(file.path(data_folder, "DA_rare", "low",
-                                             sprintf("AGP_simulation_unbalanced_rare_low_%d.rds", ID)))
-taxa_info_unbalanced_rare_low <- AGP_unbalanced_rare_low$taxa_info
-sample_metadata_rare_low <- AGP_unbalanced_rare_low$sample_metadata
-aldex_unbalanced_rare_low <- aldex(reads=AGP_unbalanced_rare_low$count_mat,
-                                   conditions=sample_metadata_rare_low$X,
+opt_parser = OptionParser(option_list=option_list)
+opt = parse_args(opt_parser)
+
+seqdepth <-opt$depth
+logfold <- log(opt$foldchange)
+nindv <- opt$nsample
+sim_seed <- opt$seed
+mode <- opt$mode
+stopifnot(mode %in% c("mix", "enrich", "deplete"))
+DAprop <- opt$daprop
+
+
+# seqdepth <-2e4
+# nindv <- 100
+# sim_seed <- 3
+# mode <- "mix"
+# DAprop <- 0.1
+
+
+input_filename <- sprintf("sim_n%d_p%d_d%d_f%.1f_s%d.rds", nindv, DAprop*100, seqdepth, exp(logfold), sim_seed)
+simulated_data <- readRDS(file.path(data_folder, mode, sprintf("seed_%d", sim_seed), input_filename))
+
+taxa_info_DA <- simulated_data$taxa_info
+
+prevalences <- rowMeans(simulated_data$count_mat > 0)
+count_mat_subset <- simulated_data$count_mat[prevalences > 0.1, ]
+
+ptm <- proc.time()
+aldex_DA <- aldex(reads=count_mat_subset,
+                                   conditions=simulated_data$sample_metadata$Group,
                                    test="t")
-performance_unbalanced_rare_low <- evaluation(taxa_info_unbalanced_rare_low,
-                                              aldex_unbalanced_rare_low)
-output_unbalanced_rare_low <- list(performance=performance_unbalanced_rare_low,
-                                   aldex_result=aldex_unbalanced_rare_low)
-saveRDS(output_unbalanced_rare_low, 
-        file.path(aldex_folder, "DA_rare", "low", 
-                  sprintf("summary_unbalanced_rare_low_%d.rds", ID)))
+duration <- proc.time() - ptm
 
 
-# rare DA taxa, medium proportion(10%)
-AGP_unbalanced_rare_medium <- readRDS(file.path(data_folder, "DA_rare", "medium",
-                                                sprintf("AGP_simulation_unbalanced_rare_medium_%d.rds", ID)))
-taxa_info_unbalanced_rare_medium <- AGP_unbalanced_rare_medium$taxa_info
-sample_metadata_rare_medium <- AGP_unbalanced_rare_medium$sample_metadata
-aldex_unbalanced_rare_medium <- aldex(reads=AGP_unbalanced_rare_medium$count_mat,
-                                      conditions=sample_metadata_rare_medium$X,
-                                      test="t")
-performance_unbalanced_rare_medium <- evaluation(taxa_info_unbalanced_rare_medium,
-                                                 aldex_unbalanced_rare_medium)
-output_unbalanced_rare_medium <- list(performance=performance_unbalanced_rare_medium,
-                                      aldex_result=aldex_unbalanced_rare_medium)
-saveRDS(output_unbalanced_rare_medium, 
-        file.path(aldex_folder, "DA_rare", "medium", 
-                  sprintf("summary_unbalanced_rare_medium_%d.rds", ID)))
+if(DAprop == 0){
+  performance_aldex_DA <- evaluation(taxa_info_DA, aldex_DA, nullcase=T)
+} else{
+  performance_aldex_DA <- evaluation(taxa_info_DA, aldex_DA, nullcase=F)
+}
 
+performance_aldex <- evaluation(taxa_info_DA, aldex_DA)
 
+output_aldex <- list(performance_aldex=performance_aldex,
+                     duration=duration)
 
-# rare DA taxa, high proportion(20%)
-AGP_unbalanced_rare_high <- readRDS(file.path(data_folder, "DA_rare", "high",
-                                              sprintf("AGP_simulation_unbalanced_rare_high_%d.rds", ID)))
-taxa_info_unbalanced_rare_high <- AGP_unbalanced_rare_high$taxa_info
-sample_metadata_rare_high <- AGP_unbalanced_rare_high$sample_metadata
-aldex_unbalanced_rare_high <- aldex(reads=AGP_unbalanced_rare_high$count_mat,
-                                    conditions=sample_metadata_rare_high$X,
-                                    test="t")
-performance_unbalanced_rare_high <- evaluation(taxa_info_unbalanced_rare_high,
-                                               aldex_unbalanced_rare_high)
-output_unbalanced_rare_high <- list(performance=performance_unbalanced_rare_high,
-                                    aldex_result=aldex_unbalanced_rare_high)
-saveRDS(output_unbalanced_rare_high, 
-        file.path(aldex_folder, "DA_rare", "high", 
-                  sprintf("summary_unbalanced_rare_high_%d.rds", ID)))
+output_filename <- sprintf("Aldex_n%d_p%d_d%d_f%.1f_s%d.rds", nindv, DAprop*100, seqdepth, exp(logfold), sim_seed)
+saveRDS(output_aldex, file=file.path(aldex_folder, mode, sprintf("seed_%d", sim_seed), output_filename))
 
-
-
-# abundant DA taxa, low proportion(5%)
-AGP_unbalanced_abundant_low <- readRDS(file.path(data_folder, "DA_abundant", "low",
-                                                 sprintf("AGP_simulation_unbalanced_abundant_low_%d.rds", ID)))
-taxa_info_unbalanced_abundant_low <- AGP_unbalanced_abundant_low$taxa_info
-sample_metadata_abundant_low <- AGP_unbalanced_abundant_low$sample_metadata
-aldex_unbalanced_abundant_low <- aldex(reads=AGP_unbalanced_abundant_low$count_mat,
-                                       conditions=sample_metadata_abundant_low$X,
-                                       test="t")
-performance_unbalanced_abundant_low <- evaluation(taxa_info_unbalanced_abundant_low,
-                                                  aldex_unbalanced_abundant_low)
-output_unbalanced_abundant_low <- list(performance=performance_unbalanced_abundant_low,
-                                       aldex_result=aldex_unbalanced_abundant_low)
-saveRDS(output_unbalanced_abundant_low, 
-        file.path(aldex_folder, "DA_abundant", "low", 
-                  sprintf("summary_unbalanced_abundant_low_%d.rds", ID)))
-
-
-
-# abundant DA taxa, medium proportion(10%)
-AGP_unbalanced_abundant_medium <- readRDS(file.path(data_folder, "DA_abundant", "medium",
-                                                    sprintf("AGP_simulation_unbalanced_abundant_medium_%d.rds", ID)))
-taxa_info_unbalanced_abundant_medium <- AGP_unbalanced_abundant_medium$taxa_info
-sample_metadata_abundant_medium <- AGP_unbalanced_abundant_medium$sample_metadata
-aldex_unbalanced_abundant_medium <- aldex(reads=AGP_unbalanced_abundant_medium$count_mat,
-                                          conditions=sample_metadata_abundant_medium$X,
-                                          test="t")
-performance_unbalanced_abundant_medium <- evaluation(taxa_info_unbalanced_abundant_medium,
-                                                     aldex_unbalanced_abundant_medium)
-output_unbalanced_abundant_medium <- list(performance=performance_unbalanced_abundant_medium,
-                                          aldex_result=aldex_unbalanced_abundant_medium)
-saveRDS(output_unbalanced_abundant_medium, 
-        file.path(aldex_folder, "DA_abundant", "medium", 
-                  sprintf("summary_unbalanced_abundant_medium_%d.rds", ID)))
-
-
-# abundant DA taxa, high proportion(20%)
-AGP_unbalanced_abundant_high <- readRDS(file.path(data_folder, "DA_abundant", "high",
-                                                  sprintf("AGP_simulation_unbalanced_abundant_high_%d.rds", ID)))
-taxa_info_unbalanced_abundant_high <- AGP_unbalanced_abundant_high$taxa_info
-sample_metadata_abundant_high <- AGP_unbalanced_abundant_high$sample_metadata
-aldex_unbalanced_abundant_high <- aldex(reads=AGP_unbalanced_abundant_high$count_mat,
-                                        conditions=sample_metadata_abundant_high$X,
-                                        test="t")
-performance_unbalanced_abundant_high <- evaluation(taxa_info_unbalanced_abundant_high,
-                                                   aldex_unbalanced_abundant_high)
-output_unbalanced_abundant_high <- list(performance=performance_unbalanced_abundant_high,
-                                        aldex_result=aldex_unbalanced_abundant_high)
-saveRDS(output_unbalanced_abundant_high, 
-        file.path(aldex_folder, "DA_abundant", "high", 
-                  sprintf("summary_unbalanced_abundant_high_%d.rds", ID)))

@@ -1,4 +1,4 @@
-library(pROC)
+suppressMessages(library(pROC))
 
 # evaluate performance
 evaluation <- function(taxa_truth, aldex_result, nullcase=FALSE){
@@ -7,7 +7,7 @@ evaluation <- function(taxa_truth, aldex_result, nullcase=FALSE){
     FPR <- mean(aldex_result$wi.ep < 0.05)
     result <- list(FPR=FPR)
   } else{
-    true_DA_taxa <- rownames(taxa_truth)[taxa_truth$logfold != 0]
+    true_DA_taxa <- rownames(taxa_truth)[taxa_truth$Logfold != 0]
     DA_truth_binary <- taxa_truth[rownames(aldex_result), ] == 0
     roc_obj <- roc(DA_truth_binary, aldex_result$wi.ep)
     

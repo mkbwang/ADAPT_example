@@ -1,8 +1,8 @@
-library(pROC)
+suppressMessages(library(pROC))
 library(dacomp)
 
 # dacomp pipeline
-pipeline <- function(AGP_data, alpha=0.05){
+pipeline <- function(AGP_data, alpha=0.05, prev_cut=0.1){
   sample_metadata <- AGP_data$sample_metadata
   count_mat <- AGP_data$count_mat
   
@@ -12,7 +12,7 @@ pipeline <- function(AGP_data, alpha=0.05){
     minimal_TA=10)
   
   updated_selected_references <- dacomp.validate_references(X = t(count_mat), #Counts
-                                                            Y = sample_metadata$X, #Traits
+                                                            Y = sample_metadata$Group, #Traits
                                                             ref_obj = selected_references, #reference checked, must be object from dacomp.select_references(...)
                                                             test = DACOMP.TEST.NAME.WILCOXON, #Test used for checking, can be same test used in dacomp.test(...)
                                                             Q_validation = 0.1, #FDR level for checking
@@ -23,7 +23,7 @@ pipeline <- function(AGP_data, alpha=0.05){
   
   # run test based on reference set
   test_result = dacomp.test(X = t(count_mat), #counts data
-                            y = sample_metadata$X, #phenotype in y argument
+                            y = sample_metadata$Group, #phenotype in y argument
                             # obtained from dacomp.select_references(...):
                             ind_reference_taxa = updated_selected_references,
                             test = DACOMP.TEST.NAME.WILCOXON, #constant, name of test
@@ -43,7 +43,7 @@ pipeline <- function(AGP_data, alpha=0.05){
 
 
 # evaluate performance
-evaluation <- function(taxa_truth, dacomp_result, nullcase=FALSE){
+evaluation <- function(taxa_truth, dacomp_result, simulated_data, nullcase=FALSE){
   result <- NULL
   if (nullcase){
     raw_pval <- dacomp_result$raw_pval
@@ -52,12 +52,13 @@ evaluation <- function(taxa_truth, dacomp_result, nullcase=FALSE){
   } else{
     raw_pval <- dacomp_result$raw_pval
     adjusted_pval <- dacomp_result$adjusted_pval
-    all_taxa <- rownames(taxa_truth)
-    dacomp_DA_taxa <- sprintf("Taxon_%d", dacomp_result$DA_taxa)
-    dacomp_reftaxa <- sprintf("Taxon_%d", dacomp_result$ref_taxa)
-    true_DA_taxa <- all_taxa[taxa_truth$logfold != 0]
-    DA_truth_binary <- taxa_truth[!is.na(raw_pval), ] == 0
-    roc_obj <- roc(DA_truth_binary, raw_pval[!is.na(raw_pval)])
+    tested_counts <- simulated_data$count_mat
+    all_tested_taxa <- rownames(tested_counts)
+    dacomp_DA_taxa <- rownames(tested_counts)[dacomp_result$DA_taxa]
+    dacomp_reftaxa <- rownames(tested_counts)[dacomp_result$ref_taxa]
+    true_DA_taxa <- rownames(taxa_truth)[taxa_truth$Logfold != 0]
+    DA_truth_binary <- taxa_truth[all_tested_taxa, ] == 0
+    roc_obj <- roc(DA_truth_binary[!is.na(raw_pval)], raw_pval[!is.na(raw_pval)])
     
     check_reftaxa <- dacomp_reftaxa %in% true_DA_taxa
     reftaxa_error <- mean(check_reftaxa)

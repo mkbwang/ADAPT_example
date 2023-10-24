@@ -1,4 +1,4 @@
-library(pROC)
+suppressMessages(library(pROC))
 
 
 
@@ -15,7 +15,7 @@ evaluation <- function(taxa_truth, locom_result, nullcase=FALSE){
     adjusted_pval <- as.vector(locom_result$q.otu)
     all_taxa <- rownames(taxa_truth)
     locom_DA_taxa <- locom_result$detected.otu
-    true_DA_taxa <- all_taxa[taxa_truth$logfold != 0]
+    true_DA_taxa <- all_taxa[taxa_truth$Logfold != 0]
     DA_truth_binary <- taxa_truth[taxa_names, ] == 0
     roc_obj <- roc(DA_truth_binary, as.vector(raw_pval))
     check_DAtaxa <- locom_DA_taxa %in% true_DA_taxa
