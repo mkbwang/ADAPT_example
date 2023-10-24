@@ -1,4 +1,4 @@
-library(pROC)
+suppressMessages(library(pROC))
 
 
 
@@ -13,7 +13,7 @@ evaluation <- function(taxa_truth, ancombc_result, nullcase=FALSE){
     pval_df <- ancombc_result$res$p_val
     qval_df <- ancombc_result$res$q_val
     decision <- ancombc_result$res$diff_abn
-    true_DA_taxa <- rownames(taxa_truth)[taxa_truth$logfold != 0]
+    true_DA_taxa <- rownames(taxa_truth)[taxa_truth$Logfold != 0]
     DA_truth_binary <- taxa_truth[pval_df$taxon, ] == 0
     roc_obj <- roc(DA_truth_binary, as.vector(pval_df[, 3]))
     

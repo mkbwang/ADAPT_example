@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#SBATCH --job-name=FPR_cox
+#SBATCH --job-name=FPR_lognormal
 #SBATCH --time=01:00:00
 #SBATCH --mail-user=wangmk@umich.edu
 #SBATCH --mail-type=END,FAIL,BEGIN
@@ -17,4 +17,4 @@
 module load fftw
 module load gsl
 module load Rtidyverse/4.2.0
-Rscript --vanilla /scratch/ligen_root/ligen0/wangmk/POLDA_example/simulation/FPR/permutation/test_cox.R
+Rscript --vanilla /scratch/ligen_root/ligen0/wangmk/POLDA_example/simulation/FPR/permutation/test_lognormal.R
