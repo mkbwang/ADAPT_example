@@ -15,6 +15,7 @@
 *.rds
 *.txt
 *.gz
+*.log
 *.fasta
 *.out
 *.biom
@@ -30,5 +31,8 @@ deplete/
 enrich/
 mix/
 logs/
+plaque_assembly/
+saliva_assembly/
+*.sra
 
 

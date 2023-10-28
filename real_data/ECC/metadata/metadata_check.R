@@ -11,9 +11,14 @@ metadata_subset <- SRA_metadata %>% select(Run, Assay.Type, Library.Name, dbGaP_
                                            Collection_Date)
 
 WGS_metadata <- metadata_subset %>% filter(Assay.Type == "WGS")
+WGS_plaque <- WGS_metadata %>% filter(env_medium == "plaque")
+WGS_saliva <- WGS_metadata %>% filter(env_medium == "Saliva")
 Amplicon16S_metadata <- metadata_subset %>% filter(Assay.Type == "AMPLICON")
 
-write.csv(WGS_metadata, file.path(ECC_folder, 'WGS', 'seqfetch', 'runinfo_WGS.csv'),
+write.csv(WGS_plaque, file.path(ECC_folder, 'WGS', 'seqfetch', 'runinfo_WGS_plaque.csv'),
+          row.names=FALSE, quote=FALSE)
+
+write.csv(WGS_saliva, file.path(ECC_folder, 'WGS', 'seqfetch', 'runinfo_WGS_saliva.csv'),
           row.names=FALSE, quote=FALSE)
 
 write.csv(Amplicon16S_metadata, file.path(ECC_folder, '16S', 'seqfetch', 'runinfo_Amplicon16S.csv'),
