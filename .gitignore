@@ -7,12 +7,16 @@
 *_files/
 *.html
 *.pdf
+*.zip
 *.Rmd
 *.csv
 *.xls
+*.xlsx
 *.rds
 *.txt
 *.gz
+*.log
+*.fasta
 *.out
 *.biom
 *.tsv
@@ -21,10 +25,14 @@
 archived_GLMM/
 */data/
 CAARS/
+fastqc/
 logs/
 deplete/
 enrich/
 mix/
 logs/
+plaque_assembly/
+saliva_assembly/
+*.sra
 
 
