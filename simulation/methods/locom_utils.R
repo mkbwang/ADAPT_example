@@ -8,7 +8,7 @@ evaluation_locom <- function(taxa_truth, locom_result, nullcase=FALSE){
   if (nullcase){
     raw_pval <- as.vector(locom_result$p.otu)
     FPR <- mean(raw_pval < 0.05)
-    result <- list(FPR=FPR, FWER=any(locom_result$q.otu < 0.05))
+    result <- list(FPR=FPR, FWE=any(locom_result$q.otu < 0.05))
   } else{
     raw_pval <- locom_result$p.otu
     taxa_names <- colnames(raw_pval)

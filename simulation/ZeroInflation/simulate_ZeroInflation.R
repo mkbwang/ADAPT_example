@@ -5,15 +5,15 @@ folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
 source(file.path(folder, "simulation_utils.R"))
 dirparams <- readRDS(file.path(folder, "DM_param.rds"))
 
-settings_df <- expand.grid(PropDA=c(0.05, 0.1, 0.2),
-                               Direction=c("balanced", "unbalanced"),
-                               FoldChange=4,
-                               Nsample=100,
-                               Depth=2e4,
-                               Zeroinflate=0,
-                               Depth_confound=FALSE,
-                               Covar_confound=FALSE,
-                           stringsAsFactors = FALSE)
+settings_df <- expand.grid(PropDA=0.1,
+                           Direction=c("balanced", "unbalanced"),
+                           FoldChange=4,
+                           Nsample=100,
+                           Depth=2e4,
+                           Zeroinflate=c(0, 0.2, 0.4),
+                           Depth_confound=FALSE,
+                           Covar_confound=FALSE,
+                           stringsAsFactors=FALSE)
 
 # parse the arguments
 library(optparse)
@@ -220,5 +220,5 @@ performance_summary <- data.frame(ID = myseed, Method=Methods,
                                   FDR = FDRs, Power=Powers, Duration=Durations)
 
 output_filename <- sprintf("experiment_%d_%d.rds", choice_setting, myseed)
-saveRDS(performance_summary, file=file.path(folder, 'propDA', 'experiments', output_filename))
+saveRDS(performance_summary, file=file.path(folder, 'ZeroInflation', 'experiments', output_filename))
 

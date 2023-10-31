@@ -9,6 +9,7 @@
 *.pdf
 *.zip
 *.Rmd
+*.png
 *.csv
 *.xls
 *.xlsx
