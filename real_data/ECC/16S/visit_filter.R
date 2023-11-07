@@ -9,7 +9,7 @@ ECC_16S <- readRDS(file.path(folder, "16S/phyloseq/phyasv_decontam_filter.rds"))
 count_matrix <- otu_table(ECC_16S)@.Data
 taxonomies <- tax_table(ECC_16S)@.Data
 sample_metadata <- data.frame(sample_data(ECC_16S)) 
-sample_metadata <- sample_metadata %>% select(COHRAID, Library.Name, dbGaP_ID,
+sample_metadata <- sample_metadata %>% dplyr::select(COHRAID, Library.Name, dbGaP_ID,
                                               host_sex, geo_loc_name,
                                               AmplificationStatus)
 
@@ -17,7 +17,7 @@ sample_metadata <- sample_metadata %>% select(COHRAID, Library.Name, dbGaP_ID,
 load(file.path(folder, "metadata", "MetaVisit.Rdata"))
 external_metadata <- MetaVisit
 external_columns <- colnames(external_metadata)
-external_metadata <- external_metadata %>% select(Visit, IncidentVisit, BabySubjectID,
+external_metadata <- external_metadata %>% dplyr::select(Visit, IncidentVisit, BabySubjectID,
                                                   COHRAID, CaseStatus, CaseEver)
 
 # filter out visits at age 12 months (visit 5)
@@ -63,6 +63,5 @@ ECC16S_month24 <- subset_samples(ECC_16S, COHRAID %in% samples_visit24_nocase$CO
 sample_data(ECC16S_month24) <- samples_visit24_nocase
 
 saveRDS(ECC16S_month24, file=file.path(folder, "16S/phyloseq/phyasv_visit24.rds"))
-
 
 

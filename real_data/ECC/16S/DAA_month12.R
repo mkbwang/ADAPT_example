@@ -54,7 +54,7 @@ MR_DAtaxa <- rownames(MR_coefficients)[MR_coefficients$adjPvalues < 0.05]
 
 # DACOMP
 library(dacomp)
-
+set.seed(1)
 selected_references <- dacomp.select_references(
   X = count_table_subset, verbose = F, run_in_parallel = T, Nr.Cores=4,
   minimal_TA=10)
@@ -129,6 +129,7 @@ allDAtaxa <- Reduce(union, list(adapt_DAtaxa, aldex_DAtaxa, ancombc_DAtaxa,
                                 dacomp_DAtaxa, linda_DAtaxa, locom_DAtaxa,
                                 rdb_DAtaxa, MR_DAtaxa))
 
+
 output_df <- data.frame(Taxon = allDAtaxa)
 output_df$ADAPT <- output_df$Taxon %in% adapt_DAtaxa
 output_df$ALDEx2 <- output_df$Taxon %in% aldex_DAtaxa
@@ -153,4 +154,5 @@ write.csv(output_df, file.path(folder, "method_comparison_12month.csv"),
           row.names=T)
 write.csv(adapt_result_df, file.path(folder, "ADAPT_12month_result.csv"),
           row.names=F)
+
 
