@@ -7,8 +7,9 @@ dirparams <- readRDS(file.path(folder, "DM_param.rds"))
 
 settings_df <- expand.grid(nSample=100,
                            seqdepth_mean=2e4,
+                           nTaxa=c(100, 200, 500, 1000),
                            depth_confound=FALSE,
-                           propDA=c(0.05, 0.1, 0.2),
+                           propDA=0.1,
                            main_mean_logfold=log(4),
                            direction=c("balanced", "unbalanced"),
                            propcf=0,
@@ -31,9 +32,10 @@ myseed <- opt$seed
 
 
 simulated_data <- SimulateCount(dirparams, 
-                                nSample = settings_df$nSample[choice], 
+                                nSample = settings_df$nSample[choice],
+                                nTaxa = settings_df$nTaxa[choice],
                                 seqdepth_mean=settings_df$seqdepth_mean[choice], 
-                                seqdepth_theta=10, depth_confound=F,
+                                seqdepth_theta=10, depth_confound=settings_df$depth_confound[choice],
                                 propDA=settings_df$propDA[choice], 
                                 main_mean_logfold = settings_df$main_mean_logfold[choice], 
                                 main_sd_logfold=0.1, 
@@ -45,7 +47,6 @@ simulated_data <- SimulateCount(dirparams,
                                 cf_sd_logfold=0.1,
                                 zero_inflation=settings_df$zero_inflation[choice], 
                                 seed=myseed)
-
 
 count_table <- simulated_data$count_mat
 metadata <- simulated_data$sample_metadata
@@ -64,7 +65,7 @@ taxa_info <- taxa_info[taxa_filter, , drop=F]
 suppressMessages(library(ADAPT))
 begin <- proc.time()
 adapt_output <- adapt(otu_table=count_table, metadata=metadata,
-                      covar="main", adjust="confounder", prevalence_cutoff=0.05,
+                      covar="main",  prevalence_cutoff=0, depth_cutoff=0,
                       taxa_are_rows = F, boot=F)
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
@@ -75,7 +76,7 @@ adapt_performance_noboot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_in
 
 begin <- proc.time()
 adapt_output <- adapt(otu_table=count_table, metadata=metadata,
-                      covar="main", adjust="confounder", prevalence_cutoff=0.05,
+                      covar="main", adjust="confounder", prevalence_cutoff=0.05, depth_cutoff=0,
                       taxa_are_rows = F, boot=T)
 adapt_time <- proc.time() - begin
 adapt_duration_boot <- adapt_time[3]
@@ -266,5 +267,5 @@ performance_summary <- data.frame(ID = myseed, Method=Methods,
                                   FDR = FDRs,FPR=FPRs, Power=Powers, Duration=Durations)
 
 output_filename <- sprintf("experiment_%d_%d.rds", choice, myseed)
-saveRDS(performance_summary, file=file.path(folder, 'propDA', 'experiments', output_filename))
+saveRDS(performance_summary, file=file.path(folder, 'TaxaNum', 'experiments', output_filename))
 

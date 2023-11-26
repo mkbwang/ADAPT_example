@@ -4,13 +4,14 @@
 rm(list=ls())
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
 
-# Familywise error rates
-FWER_settings <- expand.grid(Depth_confound=c(TRUE, FALSE), 
+# T1errors
+T1error_settings <- expand.grid(Depth_confound=FALSE, 
                              Nsample=c(50, 100, 200),
-                             Zeroinflate=0,
+                             Zeroinflate=c(0, 0.1, 0.2),
                              Covar_confound=FALSE)
 
-write.csv(FWER_settings, file.path(folder, 'FWER_settings.csv'), row.names=F)
+write.csv(T1error_settings, file.path(folder, 'T1error_settings.csv'), row.names=F)
+
 
 # Proportion of DA taxa
 PropDA_settings <- expand.grid(PropDA=c(0.05, 0.1, 0.2),
@@ -74,12 +75,14 @@ ZeroInflation_settings <- expand.grid(PropDA=0.1,
                                       FoldChange=4,
                                       Nsample=100,
                                       Depth=2e4,
-                                      Zeroinflate=c(0, 0.2, 0.4),
+                                      Zeroinflate=c(0, 0.1, 0.2),
                                       Depth_confound=FALSE,
                                       Covar_confound=FALSE)
 
 
 write.csv(ZeroInflation_settings, file.path(folder, 'ZeroInflation_settings.csv'), row.names=F)
+
+
 
 
 

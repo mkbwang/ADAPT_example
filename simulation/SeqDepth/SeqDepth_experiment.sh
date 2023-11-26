@@ -4,7 +4,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --mail-user=wangmk@umich.edu
 #SBATCH --mail-type=END,FAIL,BEGIN
-#SBATCH --array=1-100
+#SBATCH --array=1-500
 #SBATCH --mem=20g
 #SBATCH --account=ligen0
 #SBATCH --cpus-per-task=4

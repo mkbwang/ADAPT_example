@@ -1,11 +1,11 @@
 #!/bin/sh
 
 #SBATCH --job-name=propDA_experiment
-#SBATCH --time=02:00:00
+#SBATCH --time=03:00:00
 #SBATCH --mail-user=wangmk@umich.edu
 #SBATCH --mail-type=END,FAIL,BEGIN
-#SBATCH --array=1-100
-#SBATCH --mem=20g
+#SBATCH --array=1-500
+#SBATCH --mem=15g
 #SBATCH --account=ligen0
 #SBATCH --cpus-per-task=4
 #SBATCH --output=logs/%x-%a.out

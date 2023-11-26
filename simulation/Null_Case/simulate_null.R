@@ -5,15 +5,16 @@ folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
 source(file.path(folder, "simulation_utils.R"))
 dirparams <- readRDS(file.path(folder, "DM_param.rds"))
 
-settings_df <- expand.grid(nSample=100,
+settings_df <- expand.grid(nSample=c(50, 100, 200),
                            seqdepth_mean=2e4,
+                           nTaxa=c(100, 200, 500, 1000),
                            depth_confound=FALSE,
-                           propDA=c(0.05, 0.1, 0.2),
+                           propDA=0,
                            main_mean_logfold=log(4),
-                           direction=c("balanced", "unbalanced"),
-                           propcf=0,
+                           direction=c("balanced"),
+                           propcf=0.2,
                            cf_sd=1,
-                           cf_main_corr=0,
+                           cf_main_corr=c(0, 0.3, 0.6),
                            cf_mean_logfold=1,
                            zero_inflation=0,
                            stringsAsFactors = FALSE)
@@ -31,9 +32,10 @@ myseed <- opt$seed
 
 
 simulated_data <- SimulateCount(dirparams, 
-                                nSample = settings_df$nSample[choice], 
+                                nSample = settings_df$nSample[choice],
+                                nTaxa = settings_df$nTaxa[choice],
                                 seqdepth_mean=settings_df$seqdepth_mean[choice], 
-                                seqdepth_theta=10, depth_confound=F,
+                                seqdepth_theta=10, depth_confound=settings_df$depth_confound[choice],
                                 propDA=settings_df$propDA[choice], 
                                 main_mean_logfold = settings_df$main_mean_logfold[choice], 
                                 main_sd_logfold=0.1, 
@@ -64,24 +66,24 @@ taxa_info <- taxa_info[taxa_filter, , drop=F]
 suppressMessages(library(ADAPT))
 begin <- proc.time()
 adapt_output <- adapt(otu_table=count_table, metadata=metadata,
-                      covar="main", adjust="confounder", prevalence_cutoff=0.05,
+                      covar="main", adjust="confounder", prevalence_cutoff=0.05, depth_cutoff=0,
                       taxa_are_rows = F, boot=F)
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
 source(file.path(folder, "methods", "adapt_utils.R"))
 adapt_performance_noboot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
                                                        adapt_result=adapt_output,
-                                                       nullcase=F))
+                                                       nullcase=T))
 
 begin <- proc.time()
 adapt_output <- adapt(otu_table=count_table, metadata=metadata,
-                      covar="main", adjust="confounder", prevalence_cutoff=0.05,
+                      covar="main", adjust="confounder", prevalence_cutoff=0.05, depth_cutoff=0,
                       taxa_are_rows = F, boot=T)
 adapt_time <- proc.time() - begin
 adapt_duration_boot <- adapt_time[3]
 adapt_performance_boot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
                                                        adapt_result=adapt_output,
-                                                       nullcase=F))
+                                                       nullcase=T))
 
 
 
@@ -96,7 +98,7 @@ aldex_duration <- aldex_time[3]
 source(file.path(folder, "methods", "aldex2_utils.R"))
 aldex_performance <- suppressMessages(evaluation_aldex2(taxa_truth=taxa_info, 
                                        aldex_result=aldex_result,
-                                       nullcase = F))
+                                       nullcase = T))
 
 
 # MetagenomeSeq
@@ -112,7 +114,7 @@ metagenomeseq_time <- proc.time() - begin
 metagenomeseq_duration <- metagenomeseq_time[3]
 source(file.path(folder, "methods", "metagenomeseq_utils.R"))
 metagenomeseq_performance <- suppressMessages(evaluation_metagenomeseq(taxa_truth=taxa_info,
-                                           MR_result=MRfit, nullcase=F))
+                                           MR_result=MRfit, nullcase=T))
 
 
 
@@ -145,7 +147,7 @@ dacomp_duration <- dacomp_time[3]
 source(file.path(folder, "methods", "DACOMP_utils.R"))
 dacomp_performance <- evaluation_dacomp(taxa_truth=taxa_info,
                                         dacomp_result=dacomp_output,
-                                        nullcase=F)
+                                        nullcase=T)
 
 
 
@@ -165,7 +167,7 @@ zicoseq_duration <- zicoseq_time[3]
 source(file.path(folder, "methods", "zicoseq_utils.R"))
 zicoseq_performance <- evaluation_zicoseq(taxa_truth=taxa_info,
                                           zicoseq_result=zicoseq_result,
-                                          nullcase=F)
+                                          nullcase=T)
 
 
 
@@ -176,13 +178,13 @@ begin <- proc.time()
 depths <- rowSums(count_table)
 compositions <- count_table / depths
 rdb_output <- rdb(P=compositions, Z=metadata$main,
-                  alpha=0.05, fdr=T)
+                  alpha=0.05, fdr=F)
 rdb_time <- proc.time() - begin
 rdb_duration <- rdb_time[3]
 source(file.path(folder, "methods", "RDB_utils.R"))
 rdb_performance <- evaluation_rdb(taxa_truth=taxa_info,
                                   rdb_result=rdb_output,
-                                  nullcase = F)
+                                  nullcase = T)
 
 
 
@@ -197,7 +199,7 @@ locom_time <- proc.time() - ptm
 locom_duration <- locom_time[3]
 source(file.path(folder, "methods", "locom_utils.R"))
 locom_performance <- evaluation_locom(taxa_info, locom_result=locom_output,
-                                      nullcase=F)
+                                      nullcase=T)
 
 
 # ANCOMBC
@@ -213,7 +215,7 @@ ancombc_duration <- ancombc_time[3]
 source(file.path(folder, "methods", "ancombc_utils.R"))
 ancombc_performance <- evaluation_ancombc(taxa_truth=taxa_info,
                                           ancombc_result=ancombc_output,
-                                          nullcase=F)
+                                          nullcase=T)
 
 
 # LinDA
@@ -229,7 +231,7 @@ linda_duration <- linda_time[3]
 source(file.path(folder, "methods", "linda_utils.R"))
 linda_performance <- evaluation_linda(taxa_truth=taxa_info,
                                       linda_result=linda_output,
-                                      nullcase=F)
+                                      nullcase=T)
 
 
 # RioNorm2
@@ -251,20 +253,17 @@ linda_performance <- evaluation_linda(taxa_truth=taxa_info,
 
 # aggregate all the performances
 Methods <- c("ADAPT_noboot", "ADAPT_boot", "ALDEx2", "MetagenomeSeq", "DACOMP", "ZicoSeq", "RDB", "LOCOM", "ANCOMBC", "LinDA")
-FDRs <- c(adapt_performance_noboot$FDR, adapt_performance_boot$FDR, aldex_performance$FDR, metagenomeseq_performance$FDR,
-         dacomp_performance$FDR, zicoseq_performance$FDR, rdb_performance$FDR, locom_performance$FDR,
-         ancombc_performance$FDR, linda_performance$FDR)
-FPRs <- c(adapt_performance_noboot$FPR, adapt_performance_boot$FPR, aldex_performance$FPR, metagenomeseq_performance$FPR,
-          dacomp_performance$FPR, zicoseq_performance$FPR, rdb_performance$FPR, locom_performance$FPR,
-          ancombc_performance$FPR, linda_performance$FPR)
-Powers <- c(adapt_performance_noboot$Power, adapt_performance_boot$Power, aldex_performance$Power, metagenomeseq_performance$Power,
-            dacomp_performance$Power, zicoseq_performance$Power, rdb_performance$Power, locom_performance$Power,
-            ancombc_performance$Power, linda_performance$Power)
+FPRs<- c(adapt_performance_noboot$FPR, adapt_performance_boot$FPR, aldex_performance$FPR, metagenomeseq_performance$FPR,
+         dacomp_performance$FPR, zicoseq_performance$FPR, NA, locom_performance$FPR,
+         ancombc_performance$FPR, linda_performance$FPR)
+FWERs <- c(adapt_performance_noboot$FWE, adapt_performance_boot$FWE, aldex_performance$FWE, metagenomeseq_performance$FWE,
+            dacomp_performance$FWE, zicoseq_performance$FWE, rdb_performance$FWE, locom_performance$FWE,
+            ancombc_performance$FWE, linda_performance$FWE)
 Durations <- c(adapt_duration_noboot, adapt_duration_boot, aldex_duration, metagenomeseq_duration, dacomp_duration, zicoseq_duration,
               rdb_duration, locom_duration, ancombc_duration, linda_duration)
 performance_summary <- data.frame(ID = myseed, Method=Methods,
-                                  FDR = FDRs,FPR=FPRs, Power=Powers, Duration=Durations)
+                                  FPR = FPRs, FWER=FWERs, Duration=Durations)
 
 output_filename <- sprintf("experiment_%d_%d.rds", choice, myseed)
-saveRDS(performance_summary, file=file.path(folder, 'propDA', 'experiments', output_filename))
+saveRDS(performance_summary, file=file.path(folder, 'Null_Case', 'experiments', output_filename))
 

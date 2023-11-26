@@ -5,9 +5,10 @@ library(cowplot)
 library(RColorBrewer)
 library(ggrepel)
 
-folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/SeqDepth"
+folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/Dimension"
 
-settings_df <- expand.grid(seqdepth_mean=c(1e4, 2e4, 4e4),
+settings_df <- expand.grid(nSample=c(50, 100, 200),
+                           nTaxa=c(100, 200, 500, 1000),
                            direction=c("Balanced Change", "Unbalanced Change"),
                            stringsAsFactors = FALSE)
 
@@ -35,52 +36,55 @@ for (choice in choices){
   results_summary <- results_summary %>% filter(Method != "ADAPT_noboot") %>%
     mutate(Method=replace(Method, Method == "ADAPT_boot", "ADAPT"))
   
-  results_summary$Seqdepth <- as.character(settings_df$seqdepth_mean[choice])
+  results_summary$SampleSize<- as.character(settings_df$nSample[choice])
+  results_summary$TaxaNum <- as.character(settings_df$nTaxa[choice])
   results_summary$Direction <- settings_df$direction[choice]
   all_summaries[[choice]] <- results_summary
   
 }
 
 all_summaries_df <- do.call(rbind, all_summaries)
-all_summaries_df$FDRLabel <- ""
-all_summaries_df$PowerLabel <- ""
-all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"] <- 
-  all_summaries_df$Method[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"]
-all_summaries_df$FDRLabel[all_summaries_df$Seqdepth=="40000" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
+subset_summaries <- all_summaries_df %>% filter(TaxaNum == "1000")
 
-all_summaries_df$PowerLabel[all_summaries_df$Seqdepth=="40000"] <- 
-  all_summaries_df$Method[all_summaries_df$Seqdepth=="40000"]
+subset_summaries$FDRLabel <- ""
+subset_summaries$PowerLabel <- ""
+subset_summaries$FDRLabel[subset_summaries$FDR > 0.055 & subset_summaries$SampleSize == "50"] <- 
+  subset_summaries$Method[subset_summaries$FDR > 0.055 & subset_summaries$SampleSize == "50"]
+subset_summaries$FDRLabel[subset_summaries$SampleSize == "50" & subset_summaries$Method=="ADAPT"] <- "ADAPT"
 
-all_summaries_df$Seqdepth <- factor(all_summaries_df$Seqdepth, 
-                                  levels=c("10000", "20000", "40000"))
-all_summaries_df$Direction <- factor(all_summaries_df$Direction, 
+subset_summaries$PowerLabel[subset_summaries$SampleSize == "50"] <- 
+  subset_summaries$Method[subset_summaries$SampleSize == "50"]
+
+subset_summaries$SampleSize <- factor(subset_summaries$SampleSize, 
+                                  levels=c("50", "100", "200"))
+subset_summaries$Direction <- factor(subset_summaries$Direction, 
                                      levels=c("Balanced Change", "Unbalanced Change"))
-all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
+subset_summaries$isADAPT <- subset_summaries$Method == "ADAPT"
 
 
 
 manual_color <- c("#666666", "#d742f5")
 
-FDR_plot <- ggplot(all_summaries_df, aes(x=Seqdepth, y=FDR, color=isADAPT, group=Method)) +
+FDR_plot <- ggplot(subset_summaries, aes(x=SampleSize, y=FDR, color=isADAPT, group=Method)) +
   geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7, linetype="dashed") + 
   geom_hline(yintercept=0.05, linetype="dashed", color="red") +
-  scale_y_continuous(limits=c(0, 0.1))+
+  scale_y_continuous(limits=c(0, 0.2))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Sequencing Depth") + ylab("False Discovery Rate") + theme_bw() + 
-  geom_text_repel(aes(label = FDRLabel), nudge_x = 0.2,
+  xlab("Sample Size") + ylab("False Discovery Rate") + theme_bw() + 
+  geom_text_repel(aes(label = FDRLabel), nudge_x =- 0.2,
                   na.rm = TRUE,  size=3.5)+
   theme(text=element_text(size=14), legend.position = "None")
 
 
 FDR_plot
 
-Power_plot <- ggplot(all_summaries_df, aes(x=Seqdepth, y=Power, color=isADAPT, group=Method)) +
+Power_plot <- ggplot(subset_summaries, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7, linetype="dashed") + 
   scale_y_continuous(limits=c(0, 1))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Sequencing Depth") + ylab("Power") + theme_bw() + 
+  xlab("Sample Size") + ylab("Power") + theme_bw() + 
   geom_text_repel(aes(label = PowerLabel),
-                  nudge_x = 0.2,
+                  nudge_x = -0.2,
                   na.rm = TRUE,  size=3.5)+
   theme(text=element_text(size=14), legend.position = "None")
 
