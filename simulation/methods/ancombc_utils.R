@@ -1,17 +1,19 @@
 suppressMessages(library(pROC))
 
 
-
 # evaluate performance
-evaluation_ancombc <- function(taxa_truth, ancombc_result, nullcase=FALSE){
+evaluation_ancombc <- function(ancombc_result, taxa_truth=NULL, nullcase=FALSE){
   result <- NULL
   output_df <- ancombc_result$res
   pvals <- output_df$p_main1
   qvals <- output_df$q_main1
   if (nullcase){
-    FPR <- mean(pvals < 0.05)
-    result <- list(FPR=FPR,
-                   FWE=any(pvals < 0.05/length(pvals), na.rm=T))
+    result <- list(FPR_1 = mean(pvals < 0.01),
+                   FPR_5 = mean(pvals < 0.05),
+                   FPR_10 = mean(pvals < 0.1),
+                   FWE_1 =any(pvals < 0.01/length(pvals), na.rm=T),
+                   FWE_5 =any(pvals < 0.05/length(pvals), na.rm=T),
+                   FWE_10 =any(pvals < 0.1/length(pvals), na.rm=T))
   } else{
 
     true_DA_taxa <- rownames(taxa_truth)[taxa_truth$log_main_eff != 0]

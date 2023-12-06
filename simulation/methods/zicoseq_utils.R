@@ -1,14 +1,19 @@
 suppressMessages(library(pROC))
 
 # evaluate performance
-evaluation_zicoseq <- function(taxa_truth, zicoseq_result, nullcase=FALSE){
+evaluation_zicoseq <- function(zicoseq_result, taxa_truth=NULL, nullcase=FALSE){
   result <- NULL
   raw_pval <- zicoseq_result$p.raw
   adjusted_pval <- zicoseq_result$p.adj.fdr
   fwer_pval <- zicoseq_result$p.adj.fwer
   if (nullcase){
     FPR <- mean(raw_pval < 0.05, na.rm=TRUE)
-    result <- list(FPR=FPR, FWE = any(fwer_pval < 0.05, na.rm=T))
+    result <- list(FPR_1 = mean(raw_pval < 0.01, na.rm=TRUE), 
+                   FPR_5 = mean(raw_pval < 0.05, na.rm=TRUE),
+                   FPR_10 = mean(raw_pval < 0.1, na.rm=TRUE), 
+                   FWE_1 = any(fwer_pval < 0.01, na.rm=T),
+                   FWE_5 = any(fwer_pval < 0.05, na.rm=T),
+                   FWE_10 = any(fwer_pval < 0.1, na.rm=T))
   } else{
     
     zicoseq_decision <- adjusted_pval < 0.05

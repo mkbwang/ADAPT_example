@@ -7,7 +7,7 @@ library(ggrepel)
 
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/SeqDepth"
 
-settings_df <- expand.grid(seqdepth_mean=c(1e4, 2e4, 4e4),
+settings_df <- expand.grid(seqdepth_mean=c(5e3, 1e4, 2e4, 4e4),
                            direction=c("Balanced Change", "Unbalanced Change"),
                            stringsAsFactors = FALSE)
 
@@ -32,8 +32,8 @@ for (choice in choices){
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
   
-  results_summary <- results_summary %>% filter(Method != "ADAPT_noboot") %>%
-    mutate(Method=replace(Method, Method == "ADAPT_boot", "ADAPT"))
+  # results_summary <- results_summary %>% filter(Method != "ADAPT_noboot") %>%
+  #   mutate(Method=replace(Method, Method == "ADAPT_boot", "ADAPT"))
   
   results_summary$Seqdepth <- as.character(settings_df$seqdepth_mean[choice])
   results_summary$Direction <- settings_df$direction[choice]
@@ -42,52 +42,48 @@ for (choice in choices){
 }
 
 all_summaries_df <- do.call(rbind, all_summaries)
-all_summaries_df$FDRLabel <- ""
-all_summaries_df$PowerLabel <- ""
-all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"] <- 
-  all_summaries_df$Method[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"]
-all_summaries_df$FDRLabel[all_summaries_df$Seqdepth=="40000" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-
-all_summaries_df$PowerLabel[all_summaries_df$Seqdepth=="40000"] <- 
-  all_summaries_df$Method[all_summaries_df$Seqdepth=="40000"]
+# all_summaries_df$FDRLabel <- ""
+# all_summaries_df$PowerLabel <- ""
+# all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"] <- 
+#   all_summaries_df$Method[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"]
+# all_summaries_df$FDRLabel[all_summaries_df$Seqdepth=="40000" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
+# 
+# all_summaries_df$PowerLabel[all_summaries_df$Seqdepth=="40000"] <- 
+#   all_summaries_df$Method[all_summaries_df$Seqdepth=="40000"]
 
 all_summaries_df$Seqdepth <- factor(all_summaries_df$Seqdepth, 
-                                  levels=c("10000", "20000", "40000"))
+                                  levels=c("5000", "10000", "20000", "40000"))
 all_summaries_df$Direction <- factor(all_summaries_df$Direction, 
                                      levels=c("Balanced Change", "Unbalanced Change"))
 all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
 
 
 
-manual_color <- c("#666666", "#d742f5")
+manual_color <- c("#666666", "#0066ff")
 
 FDR_plot <- ggplot(all_summaries_df, aes(x=Seqdepth, y=FDR, color=isADAPT, group=Method)) +
-  geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7, linetype="dashed") + 
-  geom_hline(yintercept=0.05, linetype="dashed", color="red") +
-  scale_y_continuous(limits=c(0, 0.1))+
+  geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
+  geom_hline(yintercept=0.05, linetype="dotted", color="red") +
+  scale_y_continuous(limits=c(0, 0.15))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Sequencing Depth") + ylab("False Discovery Rate") + theme_bw() + 
-  geom_text_repel(aes(label = FDRLabel), nudge_x = 0.2,
-                  na.rm = TRUE,  size=3.5)+
+  xlab("Average Library Size") + ylab("False Discovery Rate") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
 
 
 FDR_plot
 
 Power_plot <- ggplot(all_summaries_df, aes(x=Seqdepth, y=Power, color=isADAPT, group=Method)) +
-  geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7, linetype="dashed") + 
+  geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   scale_y_continuous(limits=c(0, 1))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Sequencing Depth") + ylab("Power") + theme_bw() + 
-  geom_text_repel(aes(label = PowerLabel),
-                  nudge_x = 0.2,
-                  na.rm = TRUE,  size=3.5)+
+  xlab("Average Library Size") + ylab("Power") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
 
 
 Power_plot
 
-combined_plot <- plot_grid(FDR_plot, Power_plot, nrow=1)
+write.csv(all_summaries_df, 
+          file.path(folder, "SeqDepth_summary.csv"),
+          row.names=F)
 
-combined_plot
 

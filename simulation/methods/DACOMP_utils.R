@@ -1,13 +1,19 @@
 suppressMessages(library(pROC))
 
 # evaluate performance
-evaluation_dacomp <- function(taxa_truth, dacomp_result, nullcase=FALSE){
+evaluation_dacomp <- function(dacomp_result, taxa_truth=NULL,  nullcase=FALSE){
   result <- NULL
   raw_pval <- dacomp_result$p.values.test
   adjusted_pval <- dacomp_result$p.values.test.adjusted
   if (nullcase){
     FPR <- mean(raw_pval < 0.05, na.rm=TRUE)
-    result <- list(FPR=FPR, FWE = any(raw_pval < 0.05/length(raw_pval), na.rm=T))
+    result <- list(
+      FPR_1 = mean(raw_pval < 0.01, na.rm=TRUE),
+      FPR_5 = mean(raw_pval < 0.05, na.rm=TRUE),
+      FPR_10 = mean(raw_pval < 0.1, na.rm=TRUE),
+      FWE_1 = any(raw_pval < 0.01/length(raw_pval), na.rm=T),
+      FWE_5 = any(raw_pval < 0.05/length(raw_pval), na.rm=T),
+      FWE_10 = any(raw_pval < 0.1/length(raw_pval), na.rm=T))
   } else{
     
     dacomp_decision <- adjusted_pval < 0.05

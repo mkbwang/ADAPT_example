@@ -5,10 +5,10 @@ library(cowplot)
 library(RColorBrewer)
 library(ggrepel)
 
-folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/FoldChange"
+folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/TaxaNum"
 
-settings_df <- expand.grid(FoldChange=c(3, 3.5, 4, 5, 6),
-  direction=c("Balanced Change", "Unbalanced Change"),
+settings_df <- expand.grid(nTaxa=c(100, 200, 500, 1000),
+                           direction=c("Balanced Change", "Unbalanced Change"),
                            stringsAsFactors = FALSE)
 
 
@@ -33,7 +33,7 @@ for (choice in choices){
   
   # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
   
-  results_summary$FoldChange<- as.character(settings_df$FoldChange[choice])
+  results_summary$nTaxa<- as.character(settings_df$nTaxa[choice])
   results_summary$Direction <- settings_df$direction[choice]
   all_summaries[[choice]] <- results_summary
   
@@ -41,18 +41,10 @@ for (choice in choices){
 
 all_summaries_df <- do.call(rbind, all_summaries)
 
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.1] <- 
-#   all_summaries_df$Method[all_summaries_df$FDR > 0.1]
-# all_summaries_df$FDRLabel[all_summaries_df$FoldChange=="3" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
 
-# all_summaries_df$PowerLabel[all_summaries_df$FoldChange=="6"] <- 
-#   all_summaries_df$Method[all_summaries_df$FoldChange=="6"]
-# 
-all_summaries_df$FoldChange <- factor(all_summaries_df$FoldChange,
-                                  levels=c("3", "3.5", "4", "5", "6"))
-all_summaries_df$Direction <- factor(all_summaries_df$Direction,
+all_summaries_df$nTaxa <- factor(all_summaries_df$nTaxa, 
+                                  levels=c("100", "200", "500", "1000"))
+all_summaries_df$Direction <- factor(all_summaries_df$Direction, 
                                      levels=c("Balanced Change", "Unbalanced Change"))
 all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
 
@@ -60,29 +52,40 @@ all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
 
 manual_color <- c("#666666", "#0066ff")
 
-FDR_plot <- ggplot(all_summaries_df, aes(x=FoldChange, y=FDR, color=isADAPT, group=Method)) +
+FDR_plot <- ggplot(all_summaries_df, aes(x=nTaxa, y=FDR, color=isADAPT, group=Method)) +
   geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
   scale_y_continuous(limits=c(0, 0.15))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Fold Change") + ylab("False Discovery Rate") + theme_bw() + 
+  xlab("Total Number of Taxa") + ylab("False Discovery Rate") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
 
 
 FDR_plot
 
-Power_plot <- ggplot(all_summaries_df, aes(x=FoldChange, y=Power, color=isADAPT, group=Method)) +
+Power_plot <- ggplot(all_summaries_df, aes(x=nTaxa, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   scale_y_continuous(limits=c(0, 1))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
-  xlab("Average Fold Change") + ylab("Power") + theme_bw() + 
+  xlab("Total Number of Taxa") + ylab("Power") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
 
 
 Power_plot
 
-
-write.csv(all_summaries_df, file.path(folder,  "FoldChange_Summary.csv"),
+write.csv(all_summaries_df, file.path(folder, "TaxaNum_summary.csv"),
           row.names=F)
 
+library(scales)
+duration_df <- all_summaries_df %>% group_by(Method, nTaxa) %>% summarise(Duration=mean(Duration))
+duration_df$isADAPT <- duration_df$Method == "ADAPT"
+time_plot <- ggplot(duration_df, aes(x=nTaxa, y=Duration, color=isADAPT, group=Method))+
+  geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
+  scale_y_continuous(trans='log10', 
+                     breaks = trans_breaks("log10", function(x) 10^x),
+                     labels = trans_format("log10", math_format(10^.x))) +
+  scale_color_manual(values=manual_color)+
+  xlab("Total Number of Taxa") + ylab("Time (second)") + theme_bw()+
+  theme(text=element_text(size=14), legend.position = "None")
 
+time_plot

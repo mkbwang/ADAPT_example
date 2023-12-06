@@ -18,7 +18,7 @@ module load Rtidyverse/4.2.0
 
 cd $SLURM_SUBMIT_DIR
 
-choice_array=(1 2 3 4 5 6)
+choice_array=(1 2 3 4 5 6 7 8)
 
 for str in ${choice_array[@]}; do
   Rscript --vanilla simulate_propDA.R -c ${str} -s ${SLURM_ARRAY_TASK_ID}

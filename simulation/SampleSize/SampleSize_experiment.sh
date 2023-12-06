@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#SBATCH --job-name=Sample_experiment
-#SBATCH --time=02:00:00
+#SBATCH --job-name=SampleSize_experiment
+#SBATCH --time=03:00:00
 #SBATCH --mail-user=wangmk@umich.edu
 #SBATCH --mail-type=END,FAIL,BEGIN
 #SBATCH --array=1-500
@@ -18,7 +18,7 @@ module load Rtidyverse/4.2.0
 
 cd $SLURM_SUBMIT_DIR
 
-choice_array=({1..6..1})
+choice_array=({1..12..1})
 
 for str in ${choice_array[@]}; do
   Rscript --vanilla simulate_SampleSize.R -c ${str} -s ${SLURM_ARRAY_TASK_ID}

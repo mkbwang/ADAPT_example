@@ -35,5 +35,5 @@ logs/
 plaque_assembly/
 saliva_assembly/
 *.sra
-
+maaslin2_output/
 
