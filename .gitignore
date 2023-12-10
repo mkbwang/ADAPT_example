@@ -9,6 +9,7 @@
 *.pdf
 *.zip
 *.Rmd
+*.png
 *.csv
 *.xls
 *.xlsx
@@ -22,7 +23,7 @@
 *.tsv
 *_Model_Summary/
 *_plots/
-archived_GLMM/
+archive/
 */data/
 CAARS/
 fastqc/
@@ -34,5 +35,5 @@ logs/
 plaque_assembly/
 saliva_assembly/
 *.sra
-
+maaslin2_output/
 
