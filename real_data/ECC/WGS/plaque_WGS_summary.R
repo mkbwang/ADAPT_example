@@ -2,8 +2,34 @@
 rm(list=ls())
 folder <- 'real_data/ECC/WGS'
 comparison_plaque <- read.csv(file.path(folder, 
-                                         "method_comparison_WGS_plaque.csv"),
-                               row.names = 1)
+                                         "method_comparison_WGS_plaque.csv"))
+colnames(comparison_plaque) <- c("Name", "ADAPT", "ALDEx2", "Maaslin2", "ZicoSeq",
+                                             "ANCOM", "ANCOMBC", "LinDA", "metagenomeSeq", "DACOMP")
+comparison_plaque[is.na(comparison_plaque)] <- 0
+comparison_plaque <- comparison_plaque %>% dplyr::select(Name, ADAPT, ALDEx2, Maaslin2, metagenomeSeq, DACOMP,
+                                                  ZicoSeq, ANCOM, ANCOMBC, LinDA)
+
+
+library(reshape2)
+comparison_WGS_long <- melt(comparison_plaque, id.vars="Name", variable.name="Method",
+                           value.name="Direction")
+comparison_WGS_long$Direction <- factor(comparison_WGS_long$Direction)
+comparison_WGS_long$Name <- factor(comparison_WGS_long$Name, 
+                                  levels=rev(comparison_plaque$Name))
+
+
+
+library(ggplot2)
+comparison_plot <- ggplot(comparison_WGS_long, aes(Method, Name, fill = Direction))+
+  geom_tile(color="gray") + 
+  scale_fill_manual(values=c("#077DE8", "white", '#F04520')) +
+  xlab("Method") + ylab("Taxon") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+        legend.position="none")
+
+
+
+
 
 
 adapt_plaque_result <- read.csv(file.path(folder,
@@ -46,23 +72,7 @@ volcano_plaque <- ggplot(adapt_plaque_result, aes(x=log2effect, y=neglog10pval))
 
 
 
-# heatmap plot of DAA result comparison
-DA_full_df <- comparison_plaque[, seq(1, 9)]
-library(reshape2)
-DA_long_df <- melt(DA_full_df, id.vars="Taxon", variable.name="Method",
-                   value.name="isDA")
-DA_long_df$isDA <- as.integer(DA_long_df$isDA)
-DA_long_df$isDA[DA_long_df$Method == "ADAPT" & DA_long_df$isDA] <- 2
-DA_long_df$isDA <- as.factor(DA_long_df$isDA)
-DA_long_df$Taxon <- factor(DA_long_df$Taxon, levels=DA_long_df$Taxon[1:15])
 
-
-comparison_plot <- ggplot(DA_long_df, aes(Taxon, Method, fill = isDA))+
-  geom_tile(color="gray") + 
-  scale_fill_manual(values=c("white", "black", '#3366ff')) +
-  xlab("Taxon") + ylab("Method") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position="none")
 
 # combine the plots
 library(cowplot)
