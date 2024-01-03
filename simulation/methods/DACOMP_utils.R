@@ -6,7 +6,6 @@ evaluation_dacomp <- function(dacomp_result, taxa_truth=NULL,  nullcase=FALSE){
   raw_pval <- dacomp_result$p.values.test
   adjusted_pval <- dacomp_result$p.values.test.adjusted
   if (nullcase){
-    FPR <- mean(raw_pval < 0.05, na.rm=TRUE)
     result <- list(
       FPR_1 = mean(raw_pval < 0.01, na.rm=TRUE),
       FPR_5 = mean(raw_pval < 0.05, na.rm=TRUE),

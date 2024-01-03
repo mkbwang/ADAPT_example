@@ -42,15 +42,6 @@ for (choice in choices){
 }
 
 all_summaries_df <- do.call(rbind, all_summaries)
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.055 & all_summaries_df$propcf=="40"] <- 
-#   all_summaries_df$Method[all_summaries_df$FDR > 0.055 &all_summaries_df$propcf=="40"]
-# all_summaries_df$FDRLabel[all_summaries_df$propcf=="40" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-# 
-# all_summaries_df$PowerLabel[all_summaries_df$propcf=="40"] <- 
-#   all_summaries_df$Method[all_summaries_df$propcf=="40"]
-
 all_summaries_df$corr <- sprintf("Corr(X, Z)=%.1f", all_summaries_df$corr)
 all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
 

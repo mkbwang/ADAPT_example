@@ -90,24 +90,9 @@ adapt_performance_noboot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_in
                                                        nullcase=F))
 
 
-# begin <- proc.time()
-# adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
-#                       covar="main", adjust="confounder", prevalence_cutoff=0.05,
-#                       taxa_are_rows = T, boot=T)
-# adapt_time <- proc.time() - begin
-# adapt_duration_boot <- adapt_time[3]
-# adapt_performance_boot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
-#                                                        adapt_result=adapt_output,
-#                                                        nullcase=F))
-
-
 # Aldex2
 suppressMessages(library(ALDEx2))
 begin <- proc.time()
-# mm <- model.matrix(~main+confounder, metadata_df)
-# aldex_perm <- suppressMessages(aldex.clr(count_table, mm, mc.samples=4, denom="all"))
-# aldex_result <- aldex.glm(aldex_perm, mm)
-# aldex_time <- proc.time() - begin
 aldex_result <- suppressMessages(aldex(reads=count_table, conditions=metadata_df$main, mc.samples=128,
                                        test="t"))
 aldex_time <- proc.time() - begin
@@ -221,48 +206,6 @@ ancom_performance <- evaluation_ancom(taxa_truth=taxa_info,
                                       ancom_result=ancom_output$res,
                                       nullcase=F)
 
-
-# RAIDA
-# library(RAIDA)
-# count_df <- as.data.frame(count_table)
-# control_ids <- which(metadata_df$main == 0)
-# case_ids <- which(metadata_df$main == 1)
-# count_df <- count_df[, c(control_ids, case_ids)]
-# begin <- proc.time()
-# raida_output <- raida(c.data=count_df, n.lib=c(length(control_ids), length(case_ids)))
-# raida_time <- proc.time() - begin
-# raida_duration <- raida_time[3]
-# source(file.path(folder, "methods", "raida_utils.R"))
-# raida_performance <- evaluation_raida(taxa_truth=taxa_info, 
-#                                       raida_result=raida_output,
-#                                       nullcase=F)
-
-# RDB
-# library(RDB)
-# transpose_count_mat <- t(count_table)
-# transpose_composition <- transpose_count_mat / rowSums(transpose_count_mat)
-# begin <- proc.time()
-# RDB_output <- rdb(P=transpose_composition, Z=metadata_df$main,
-#                   alpha=0.05, fdr=T)
-# rdb_duration <- proc.time() - begin
-# source(file.path(folder, "methods", "RDB_utils.R"))
-# rdb_performance <- evaluation_rdb(taxa_truth=taxa_info, 
-#                                   rdb_result = RDB_output,
-#                                   nullcase=F)
-
-
-# LOCOM
-# library(LOCOM)
-# ptm <- proc.time()
-# locom_output <- locom(otu.table=t(count_table),
-#                       Y=metadata_df$main, C=metadata_df$confounder, fdr.nominal=0.05, prev.cut=0.05,
-#                       n.perm.max=2e4, seed=1, Firth.thresh = 1,
-#                       n.cores=4)
-# locom_time <- proc.time() - ptm
-# locom_duration <- locom_time[3]
-# source(file.path(folder, "methods", "locom_utils.R"))
-# locom_performance <- evaluation_locom(taxa_info, locom_result=locom_output,
-#                                       nullcase=F)
 
 
 # ANCOMBC

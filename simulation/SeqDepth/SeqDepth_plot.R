@@ -32,9 +32,6 @@ for (choice in choices){
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
   
-  # results_summary <- results_summary %>% filter(Method != "ADAPT_noboot") %>%
-  #   mutate(Method=replace(Method, Method == "ADAPT_boot", "ADAPT"))
-  
   results_summary$Seqdepth <- as.character(settings_df$seqdepth_mean[choice])
   results_summary$Direction <- settings_df$direction[choice]
   all_summaries[[choice]] <- results_summary
@@ -42,15 +39,6 @@ for (choice in choices){
 }
 
 all_summaries_df <- do.call(rbind, all_summaries)
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"] <- 
-#   all_summaries_df$Method[all_summaries_df$FDR > 0.055 & all_summaries_df$Seqdepth=="40000"]
-# all_summaries_df$FDRLabel[all_summaries_df$Seqdepth=="40000" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-# 
-# all_summaries_df$PowerLabel[all_summaries_df$Seqdepth=="40000"] <- 
-#   all_summaries_df$Method[all_summaries_df$Seqdepth=="40000"]
-
 all_summaries_df$Seqdepth <- factor(all_summaries_df$Seqdepth, 
                                   levels=c("5000", "10000", "20000", "40000"))
 all_summaries_df$Direction <- factor(all_summaries_df$Direction, 

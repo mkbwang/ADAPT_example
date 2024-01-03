@@ -31,8 +31,6 @@ for (choice in choices){
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
   
-  # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
-  
   results_summary$FoldChange<- as.character(settings_df$FoldChange[choice])
   results_summary$Direction <- settings_df$direction[choice]
   all_summaries[[choice]] <- results_summary
@@ -40,16 +38,6 @@ for (choice in choices){
 }
 
 all_summaries_df <- do.call(rbind, all_summaries)
-
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# all_summaries_df$FDRLabel[all_summaries_df$FDR > 0.1] <- 
-#   all_summaries_df$Method[all_summaries_df$FDR > 0.1]
-# all_summaries_df$FDRLabel[all_summaries_df$FoldChange=="3" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-
-# all_summaries_df$PowerLabel[all_summaries_df$FoldChange=="6"] <- 
-#   all_summaries_df$Method[all_summaries_df$FoldChange=="6"]
-# 
 all_summaries_df$FoldChange <- factor(all_summaries_df$FoldChange,
                                   levels=c("3", "3.5", "4", "5", "6"))
 all_summaries_df$Direction <- factor(all_summaries_df$Direction,

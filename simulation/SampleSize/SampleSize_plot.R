@@ -42,16 +42,6 @@ for (choice in choices){
 
 all_summaries_df <- do.call(rbind, all_summaries)
 all_summaries_df <- all_summaries_df %>% filter(SampleSize != "30")
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# FDRlabel_mask <- all_summaries_df$FDR > 0.1 & (all_summaries_df$SampleSize == "50" | all_summaries_df$SampleSize == "200")
-# all_summaries_df$FDRLabel[FDRlabel_mask] <- 
-#   all_summaries_df$Method[FDRlabel_mask]
-# all_summaries_df$FDRLabel[all_summaries_df$SampleSize == "50" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-# 
-# all_summaries_df$PowerLabel[all_summaries_df$SampleSize=="200"] <- 
-#   all_summaries_df$Method[all_summaries_df$SampleSize=="200"]
-
 all_summaries_df$SampleSize <- factor(all_summaries_df$SampleSize, 
                                   levels=c( "50", "80", "100", "150", "200"))
 all_summaries_df$Direction <- factor(all_summaries_df$Direction, 
