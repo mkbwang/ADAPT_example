@@ -42,6 +42,8 @@ all_results_df$depth_fold <- factor(all_results_df$depth_fold,
                                   levels=c("Balanced Library Size", "Unbalanced Library Size (4-fold)",
                                            "Unbalanced Library Size (10-fold)"))
 
+all_results_df$Method[all_results_df$Method == "Maaslin2"] <- "MaAsLin2" 
+
 all_summary <- all_results_df %>% group_by(Method, nSample, depth_fold) %>%
   summarise(FPR_1=mean(FPR_1, na.rm=T), FPR_5 = mean(FPR_5, na.rm=T), FPR_10=mean(FPR_10, na.rm=T),
             FWE_1 = mean(FWE_1, na.rm=T))
@@ -81,7 +83,7 @@ FPR_5_plot <- ggplot(all_results_df, aes(x=Method, y=FPR_5, color=isADAPT, group
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
   scale_y_continuous(limits=c(0, 0.6), breaks=seq(0, 0.6, 0.1))+
   facet_grid(cols=vars(depth_fold), rows=vars(nSample)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.05") + theme_bw() + 
+  xlab("Method") + ylab("False Positive Rate") + theme_bw() + 
   theme(text=element_text(size=14),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
         legend.position = "None")
@@ -94,7 +96,7 @@ FPR_10_plot <- ggplot(all_results_df, aes(x=Method, y=FPR_10, color=isADAPT, gro
   geom_boxplot() +
   geom_hline(yintercept=0.10, linetype="dotted", color="red") +
   scale_y_continuous(limits=c(0, 0.8))+
-  facet_grid(cols=vars(depth_fold), rows=vars(nSample)) + scale_color_manual(values=manual_color)+
+  facet_grid(rows=vars(depth_fold), vars=vars(nSample)) + scale_color_manual(values=manual_color)+
   xlab("Method") + ylab("False Positive Rates at level of 0.1") + theme_bw() + 
   theme(text=element_text(size=14),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),

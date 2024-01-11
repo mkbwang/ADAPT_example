@@ -51,7 +51,7 @@ manual_color <- c("#666666", "#0066ff")
 FDR_plot <- ggplot(all_summaries_df, aes(x=propDA, y=FDR, color=isADAPT, group=Method)) +
   geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.35))+
+  scale_y_continuous(limits=c(0, 0.35), breaks=seq(0, 0.35, 0.05))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
   xlab("Proportion of DA Taxa (%)") + ylab("False Discovery Rate") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
@@ -61,7 +61,7 @@ FDR_plot
 
 Power_plot <- ggplot(all_summaries_df, aes(x=propDA, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
-  scale_y_continuous(limits=c(0, 1))+
+  scale_y_continuous(limits=c(0, 1), breaks=seq(0, 1, 0.1))+
   facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
   xlab("Proportion of DA Taxa (%)") + ylab("Power") + theme_bw() + 
   theme(text=element_text(size=14), legend.position = "None")
