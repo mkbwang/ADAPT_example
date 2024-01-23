@@ -17,8 +17,23 @@ sample_metadata <- sample_metadata %>% dplyr::select(COHRAID, Library.Name, dbGa
 load(file.path(folder, "metadata", "MetaVisit.Rdata"))
 external_metadata <- MetaVisit
 external_columns <- colnames(external_metadata)
-external_metadata <- external_metadata %>% dplyr::select(Visit, IncidentVisit, BabySubjectID,
-                                                  COHRAID, CaseStatus, CaseEver)
+external_metadata <- external_metadata %>% dplyr::select(COHRAID, Visit, IncidentVisit, BabySubjectID, MotherSubjectID,
+                                                  Delivery, BabySex, AgeAtExamMonths, CaseStatus, CaseEver)
+
+
+# all visits
+total_sample_metadata <- sample_metadata %>% select(-host_sex) %>% inner_join(external_metadata, by="COHRAID")
+## two individuals have duplicate/conflicting metadata
+intermediate1 <- total_sample_metadata %>% filter(BabySubjectID == 11000244) %>% filter(CaseEver == "Case")
+intermediate2 <- total_sample_metadata %>% filter(BabySubjectID == 22000022) %>% filter(IncidentVisit == 10)
+intermediate3 <- total_sample_metadata %>% filter(BabySubjectID != 11000244 & BabySubjectID != 22000022) 
+total_sample_metadata_deduplicate <- rbind(intermediate1, intermediate2, intermediate3)
+
+rownames(total_sample_metadata_deduplicate) <- total_sample_metadata_deduplicate$COHRAID
+sample_data(ECC_16S) <- total_sample_metadata_deduplicate
+
+
+saveRDS(ECC_16S, file="real_data/ECC/16S/phyloseq/ECC_16S_cleaned.rds")
 
 # filter out visits at age 12 months (visit 5)
 external_visit_12 <- external_metadata %>% filter(Visit == 5)
