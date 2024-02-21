@@ -11,6 +11,7 @@
 *.Rmd
 *.png
 *.jpeg
+*.svg
 *.csv
 *.xls
 *.xlsx
