@@ -51,58 +51,25 @@ all_summary <- all_results_df %>% group_by(Method, nSample, depth_fold) %>%
 
 manual_color <- c("#666666", "#0066ff")
 
-# FPR_1_noadj_plot <- ggplot(subset_results_noadj, aes(x=Method, y=FPR_1, color=isADAPT, group=Method)) +
-#   geom_boxplot() +
-#   geom_hline(yintercept=0.01, linetype="dotted", color="red") +
-#   scale_y_continuous(limits=c(0, 0.15))+
-#   facet_grid(cols=vars(balance_depth)) + scale_color_manual(values=manual_color)+
-#   xlab("Method") + ylab("False Positive Rates at level of 0.01") + theme_bw() + 
-#   theme(text=element_text(size=14),
-#         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-#         legend.position = "None")
 
 
-# FPR_1_noadj_plot
 
+subset_results_df <- all_results_df %>% filter(depth_fold != "Unbalanced Library Size (4-fold)")
+subset_results_df$depth_fold <- as.character(subset_results_df$depth_fold)
+subset_results_df$depth_fold[subset_results_df$depth_fold == "Unbalanced Library Size (10-fold)"] = "Unbalanced Library Size"
 
-FPR_1_plot <- ggplot(all_results_df, aes(x=Method, y=FPR_1, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.01, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.4))+
-  facet_grid(cols=vars(depth_fold), rows=vars(nSample)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.01") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
-
-FPR_1_plot
-
-
-FPR_5_plot <- ggplot(all_results_df, aes(x=Method, y=FPR_5, color=isADAPT, group=Method)) +
+FPR_5_plot <- ggplot(subset_results_df, aes(x=Method, y=FPR_5, color=isADAPT, group=Method)) +
   geom_boxplot() +
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
   scale_y_continuous(limits=c(0, 0.6), breaks=seq(0, 0.6, 0.1))+
-  facet_grid(cols=vars(depth_fold), rows=vars(nSample)) + scale_color_manual(values=manual_color)+
+  facet_grid(rows=vars(depth_fold), cols=vars(nSample)) + scale_color_manual(values=manual_color)+
   xlab("Method") + ylab("False Positive Rate") + theme_bw() + 
   theme(text=element_text(size=14),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
+        legend.position = "None",
+        strip.text = element_text(size = 11))
 
 FPR_5_plot
-
-
-
-FPR_10_plot <- ggplot(all_results_df, aes(x=Method, y=FPR_10, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.10, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.8))+
-  facet_grid(rows=vars(depth_fold), vars=vars(nSample)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.1") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
-
-FPR_10_plot
 
 
 
