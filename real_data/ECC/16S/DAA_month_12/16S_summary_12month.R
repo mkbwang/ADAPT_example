@@ -72,7 +72,7 @@ library(ggplot2)
 volcano_12month <- ggplot(adapt_12month_result, aes(x=log2effect, y=neglog10pval)) +
   geom_point(alpha=0.8, aes(color=Type)) + 
   xlab("Log2 Fold Change") + ylab("-Log10 p-value") + theme_bw() + 
-  theme(legend.position="none") + scale_color_manual(values=c("#ff0066", "#cc6600", "#666699")) +
+  theme(legend.position="none", axis.title.x=element_blank(), axis.title.y=element_blank()) + scale_color_manual(values=c("#ff0066", "#cc6600", "#666699")) +
   geom_vline(xintercept=0, linetype="dashed", color = "blue")+
   scale_x_continuous(breaks=seq(-18, 20, 2))+
   scale_y_continuous(breaks=seq(0, 8, 1))

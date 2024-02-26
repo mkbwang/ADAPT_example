@@ -7,6 +7,10 @@ comparison_plaque[is.na(comparison_plaque)] <- 0
 
 
 library(reshape2)
+comparison_plaque <- comparison_plaque %>% select(Taxa, ADAPT,
+                              ALDEx2, MaAsLin2, metagenomeSeq, DACOMP,
+                              ZicoSeq,ANCOM,ANCOMBC, LinDA)
+
 comparison_WGS_long <- melt(comparison_plaque, id.vars="Taxa", variable.name="Method",
                            value.name="Direction")
 comparison_WGS_long$Direction <- factor(comparison_WGS_long$Direction)
@@ -63,7 +67,7 @@ library(ggplot2)
 volcano_plaque <- ggplot(adapt_plaque_result, aes(x=log2effect, y=neglog10pval)) +
   geom_point(alpha=0.8, aes(color=Type)) + 
   xlab("Log2 Fold Change") + ylab("-Log10 p-value") + theme_bw() + 
-  theme(legend.position="none") + scale_color_manual(values=c("#ff0066", "#cc6600", "#666699")) +
+  theme(legend.position="none", axis.title=element_blank()) + scale_color_manual(values=c("#ff0066", "#cc6600", "#666699")) +
   geom_vline(xintercept=0, linetype="dashed", color = "blue")+
   scale_x_continuous(breaks=seq(-18, 20, 2))+
   scale_y_continuous(breaks=seq(0, 8, 1))
