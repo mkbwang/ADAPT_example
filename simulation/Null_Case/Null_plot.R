@@ -53,7 +53,7 @@ manual_color <- c("#666666", "#0066ff")
 
 
 
-
+# remove the cases corresponding to 4-fold sequencing depth difference
 subset_results_df <- all_results_df %>% filter(depth_fold != "Unbalanced Library Size (4-fold)")
 subset_results_df$depth_fold <- as.character(subset_results_df$depth_fold)
 subset_results_df$depth_fold[subset_results_df$depth_fold == "Unbalanced Library Size (10-fold)"] = "Unbalanced Library Size"
@@ -63,11 +63,12 @@ FPR_5_plot <- ggplot(subset_results_df, aes(x=Method, y=FPR_5, color=isADAPT, gr
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
   scale_y_continuous(limits=c(0, 0.6), breaks=seq(0, 0.6, 0.1))+
   facet_grid(rows=vars(depth_fold), cols=vars(nSample)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rate") + theme_bw() + 
-  theme(text=element_text(size=14),
+  xlab("") + ylab("") + theme_bw() + 
+  theme(text=element_text(size=12),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+        axis.title=element_blank(),
         legend.position = "None",
-        strip.text = element_text(size = 11))
+        strip.text = element_text(size = 10))
 
 FPR_5_plot
 
