@@ -3,7 +3,7 @@ library(stringr)
 rm(list=ls())
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/real_data/ECC/WGS"
 
-phy_metag_plaque <- readRDS(file.path(folder, "phyloseq", "phy_metag_plaque.rds"))
+phy_metag_plaque <- readRDS(file.path(folder, "phy_metag_plaque.rds"))
 
 phy_metag_plaque <- phy_metag_plaque %>% filter_taxa(function(ct) mean(ct > 0) > 0.05, TRUE)
 count_table <- otu_table(phy_metag_plaque)@.Data
