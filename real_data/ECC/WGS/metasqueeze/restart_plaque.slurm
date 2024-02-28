@@ -1,6 +1,6 @@
 #!/bin/bash
 # The interpreter used to execute the script
-
+# restart the squeezemeta pipeline since the initial run time out
 #“#SBATCH” directives that convey submission options:
 
 #SBATCH --job-name=restart_plaque
@@ -23,12 +23,6 @@ micromamba activate SqueezeMeta
 WGS_folder=/nfs/turbo/sph-ligen/wangmk/ADAPT_example/real_data/ECC/WGS
 cd ${WGS_folder}/metasqueeze
 
-export http_proxy=http://proxy.arc-ts.umich.edu:3128/
-export FTP_PROXY=http://proxy.arc-ts.umich.edu:3128/
-export ftp_proxy=http://proxy.arc-ts.umich.edu:3128/
-export HTTPS_PROXY=http://proxy.arc-ts.umich.edu:3128/
-export https_proxy=http://proxy.arc-ts.umich.edu:3128/
-export HTTP_PROXY=http://proxy.arc-ts.umich.edu:3128/
 
 reads=${WGS_folder}/seqfetch/plaque_sequences
 samplefile=${WGS_folder}/metasqueeze/plaque_list.txt

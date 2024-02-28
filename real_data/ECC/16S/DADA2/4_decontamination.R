@@ -24,7 +24,7 @@ amp_SRR_df <- read.csv(file.path(folder, '16S', 'seqfetch', 'runinfo_Amplicon16S
 ## Match the sample name with the SRR ID, limit to true samples (no controls)
 metadata_truesample <- metadata %>% filter(SampleType == "True Sample") %>%
   select(COHRAID, FoxCavID, DNAQuant, DNAQuant1000, AmplificationStatus) %>%
-  rename(Library.Name=FoxCavID)
+  dplyr::rename(Library.Name=FoxCavID)
 
 ## add an indicator for control samples
 iscontrol <- grepl("control", amp_SRR_df$Library.Name)
@@ -81,6 +81,8 @@ maxRA <- apply(relative_abundance, 2, max)
 prevalences <- colMeans(count_mat > 0)
 taxa_filter <- maxRA > abund.filter | prevalences > prev
 phy.asv.filter <- subset_taxa(phy.asv.truesample, taxa_filter)
+metadata <- sample_data(phy.asv.filter)
+sample_names(phy.asv.filter) <- metadata$COHRAID
 saveRDS(phy.asv.filter, file.path(data_folder, "phyasv_decontam_filter.rds"))
 
 
