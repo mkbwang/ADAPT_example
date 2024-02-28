@@ -1,4 +1,4 @@
-
+library(dplyr)
 rm(list=ls())
 folder <- 'real_data/ECC/WGS'
 ## load the DAA result of all nine methods
@@ -17,6 +17,10 @@ comparison_plaque <- comparison_plaque %>% dplyr::select(Taxa, ADAPT,
                                                   ZicoSeq,ANCOM,ANCOMBC, LinDA)
 detailed_metag_plaque <- comparison_plaque %>% 
   full_join(adapt_plaque_result, by="Taxa")
+sample_size <- nrow(sample_data(phy_metag_plaque))
+prevalence_count <- as.integer(sample_size * detailed_metag_plaque$prevalence)
+detailed_metag_plaque$prevalence <- sprintf(" %d/%d", prevalence_count, sample_size)
+detailed_metag_plaque$effect <- detailed_metag_plaque$effect * log10(exp(1)) # change natural log to log10
 write.csv(detailed_metag_plaque, file.path(folder, "detailed_WGS_plaque_result.csv"),
           row.names=F)
 

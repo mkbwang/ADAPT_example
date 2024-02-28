@@ -1,17 +1,17 @@
 library(dplyr)
-rm(list=ls())
+library(stringr)
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/real_data/ECC/16S"
 
-phy_asv_month24 <- readRDS(file.path(folder, "phyloseq", "phyasv_visit24.rds"))
+phy_asv_month12 <- readRDS(file.path(folder, "phyloseq", "phyasv_visit12.rds"))
 
-
-phy_asv_month24 <- phy_asv_month24 %>% filter_taxa(function(ct) mean(ct > 0) > 0.05, TRUE)
-count_table <- otu_table(phy_asv_month24)@.Data
+phy_asv_month12 <- phy_asv_month12 %>% filter_taxa(function(ct) mean(ct > 0) > 0.05, TRUE)
+count_table <- otu_table(phy_asv_month12)@.Data
 taxa_names <- colnames(count_table)
-metadata <- data.frame(sample_data(phy_asv_month24))
+metadata <- data.frame(sample_data(phy_asv_month12))
 metadata$iscase <- 1*(metadata$CaseEver == "Case")
 metadata$female <- 1*(metadata$host_sex == "female")
 metadata$WV <- 1*(metadata$geo_loc_name == "USA: WV")
+
 
 set.seed(1)
 # ADAPT
@@ -38,7 +38,7 @@ aldex_summary$ALDEx2 <- 2*(aldex_summary$ALDEx2-0.5)
 library(Maaslin2)
 count_df <- data.frame(count_table)
 maaslin2_output <-invisible(Maaslin2(input_data=count_df, input_metadata=metadata,
-                                     output = file.path(folder, 'DAA_month_24', 'maaslin2_output'),
+                                     output = file.path(folder, 'maaslin2_output'),
                                      min_prevalence=0.05,
                                      max_significance = 0.05,
                                      fixed_effects=c("iscase"),
@@ -68,7 +68,7 @@ MR_summary <- MR_coefficients %>% filter(adjPvalues < 0.05) %>%
 MR_summary$metagenomeSeq <- 2*(MR_summary$metagenomeSeq - 0.5)
 
 
-# DACOMP
+# DACOMP, no DA taxa detected
 library(dacomp)
 set.seed(1)
 selected_references <- dacomp.select_references(
@@ -121,7 +121,7 @@ zicoseq_summary$ZicoSeq <- 2*(zicoseq_summary$ZicoSeq - 0.5)
 suppressMessages(library(ANCOMBC))
 suppressMessages(library(phyloseq))
 begin <- proc.time()
-ancom_output <- ancom(data=phy_asv_month24, p_adj_method="BH", prv_cut=0.05,
+ancom_output <- ancom(data=phy_asv_month12, p_adj_method="BH", prv_cut=0.05,
                       main_var="CaseEver", n_cl=4)
 duration <- proc.time() - begin
 ancom_result <- ancom_output$res
@@ -132,10 +132,10 @@ ancom_summary <- ancom_summary %>% mutate(Taxa=Taxa, ANCOM=coef > 0, .keep="none
 ancom_summary$ANCOM <- 2*(ancom_summary$ANCOM - 0.5)
 
 
-
 # ANCOMBC
-ancombc_output <- ancombc2(phy_asv_month24, fix_formula = 'CaseEver', p_adj_method='BH', global=T,
+ancombc_output <- ancombc2(phy_asv_month12, fix_formula = 'CaseEver', p_adj_method='BH', global=T,
                            group='CaseEver', struc_zero=FALSE, prv_cut=0.05, n_cl=4)
+
 ancombc_result <- ancombc_output$res
 ancombc_summary <- ancombc_result %>% filter(diff_CaseEverControl) %>%
   mutate(Taxa=taxon, ANCOMBC=lfc_CaseEverControl < 0, .keep="none")
@@ -162,21 +162,18 @@ combined_result <- purrr::reduce(list(adapt_summary, aldex_summary, maaslin2_sum
                                  dplyr::full_join, by = 'Taxa')
 combined_result[is.na(combined_result)] <- 0
 
-
-taxonomy_table <- tax_table(phy_asv_month24)@.Data
+taxonomy_table <- tax_table(phy_asv_month12)@.Data
 selected_taxonomies <- taxonomy_table[combined_result$Taxa, ] |> as.data.frame()
-all_DNAstrings <- as.character(phy_asv_month24@refseq)
+
+all_DNAstrings <- as.character(phy_asv_month12@refseq)
 selected_DNAstrings <- all_DNAstrings[combined_result$Taxa]
 selected_taxonomies$DNAstrings <- selected_DNAstrings
 combined_result <- cbind(combined_result, selected_taxonomies)
 
 
-
-write.csv(combined_result, file.path(folder, 'DAA_month_24', "method_comparison_24month.csv"),
+write.csv(combined_result, file.path(folder, "method_comparison_16S_saliva_12month.csv"),
           row.names=F)
-write.csv(adapt_details, file.path(folder, 'DAA_month_24', "ADAPT_24month_result.csv"),
+write.csv(adapt_details, file.path(folder, "ADAPT_16S_saliva_12month_result.csv"),
           row.names=F)
-
-
 
 
