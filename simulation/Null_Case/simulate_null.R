@@ -77,7 +77,7 @@ adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
 source(file.path(folder, "methods", "adapt_utils.R"))
-adapt_performance_noboot <- suppressMessages(evaluation_adapt(adapt_result=adapt_output,
+adapt_performance <- suppressMessages(evaluation_adapt(adapt_result=adapt_output,
                                                        nullcase=T))
 
 
@@ -214,22 +214,22 @@ linda_performance <- evaluation_linda(linda_result=linda_output,
 # aggregate all the performances
 Methods <- c("ADAPT", "ALDEx2", "Maaslin2", "metagenomeSeq", "DACOMP", "ZicoSeq",
              "ANCOMBC", "LinDA")
-FPR_1s <- c(adapt_performance_noboot$FPR_1, aldex_performance$FPR_1, maaslin2_performance$FPR_1,
+FPR_1s <- c(adapt_performance$FPR_1, aldex_performance$FPR_1, maaslin2_performance$FPR_1,
           metagenomeseq_performance$FPR_1, dacomp_performance$FPR_1, zicoseq_performance$FPR_1, 
           ancombc_performance$FPR_1, linda_performance$FPR_1)
-FPR_5s <- c(adapt_performance_noboot$FPR_5, aldex_performance$FPR_5, maaslin2_performance$FPR_5,
+FPR_5s <- c(adapt_performance$FPR_5, aldex_performance$FPR_5, maaslin2_performance$FPR_5,
             metagenomeseq_performance$FPR_5, dacomp_performance$FPR_5, zicoseq_performance$FPR_5, 
             ancombc_performance$FPR_5, linda_performance$FPR_5)
-FPR_10s <- c(adapt_performance_noboot$FPR_10, aldex_performance$FPR_10, maaslin2_performance$FPR_10,
+FPR_10s <- c(adapt_performance$FPR_10, aldex_performance$FPR_10, maaslin2_performance$FPR_10,
             metagenomeseq_performance$FPR_10, dacomp_performance$FPR_10, zicoseq_performance$FPR_10, 
             ancombc_performance$FPR_10, linda_performance$FPR_10)
-FWE_1s <- c(adapt_performance_noboot$FWE_1, aldex_performance$FWE_1, maaslin2_performance$FWE_1,
+FWE_1s <- c(adapt_performance$FWE_1, aldex_performance$FWE_1, maaslin2_performance$FWE_1,
             metagenomeseq_performance$FWE_1, dacomp_performance$FWE_1, zicoseq_performance$FWE_1, 
             ancombc_performance$FWE_1, linda_performance$FWE_1)
-FWE_5s <- c(adapt_performance_noboot$FWE_5, aldex_performance$FWE_5, maaslin2_performance$FWE_5,
+FWE_5s <- c(adapt_performance$FWE_5, aldex_performance$FWE_5, maaslin2_performance$FWE_5,
             metagenomeseq_performance$FWE_5, dacomp_performance$FWE_5, zicoseq_performance$FWE_5, 
             ancombc_performance$FWE_5, linda_performance$FWE_5)
-FWE_10s <- c(adapt_performance_noboot$FWE_10, aldex_performance$FWE_10, maaslin2_performance$FWE_10,
+FWE_10s <- c(adapt_performance$FWE_10, aldex_performance$FWE_10, maaslin2_performance$FWE_10,
              metagenomeseq_performance$FWE_10, dacomp_performance$FWE_10, zicoseq_performance$FWE_10, 
              ancombc_performance$FWE_10, linda_performance$FWE_10)
 Durations <- c(adapt_duration_noboot, aldex_duration, maaslin2_duration,

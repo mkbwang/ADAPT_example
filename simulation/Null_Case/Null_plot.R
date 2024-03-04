@@ -27,7 +27,7 @@ for (choice in choices){
   
   results_df <- do.call(rbind, results)
   
-  # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
+  
   results_df$nSample <- settings_df$nSample[choice]
   results_df$depth_fold <- settings_df$depth_fold[choice]
   all_results[[choice]] <- results_df

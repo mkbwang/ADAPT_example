@@ -31,8 +31,7 @@ for (choice in choices){
     summarise(FDR=mean(FDR, na.rm=T),
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
-  
-  # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
+
   
   results_summary$SampleSize<- as.character(settings_df$nSample[choice])
   results_summary$Direction <- settings_df$direction[choice]
@@ -82,7 +81,7 @@ FDR_plot_2
 
 
 
-# balanced, FDR
+# balanced, Power
 Power_plot_1 <- ggplot(subset_summaries_df_1, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   scale_y_continuous(limits=c(0, 1), breaks=seq(0, 1, 0.1))+
@@ -93,7 +92,7 @@ Power_plot_1 <- ggplot(subset_summaries_df_1, aes(x=SampleSize, y=Power, color=i
 
 Power_plot_1
 
-
+# unbalanced, Power
 Power_plot_2 <- ggplot(subset_summaries_df_2, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   scale_y_continuous(limits=c(0, 1), breaks=seq(0, 1, 0.1))+
@@ -109,6 +108,8 @@ write.csv(all_summaries_df,
           file.path(folder, "SampleSize_summary.csv"),
           row.names=F)
 
+
+# the duration of all methods with respect to the sample size (not used)
 duration_df <- all_summaries_df %>% group_by(Method, SampleSize) %>%
   summarise(Duration=mean(Duration))
 duration_df$isADAPT <- duration_df$Method == "ADAPT"

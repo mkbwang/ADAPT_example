@@ -85,7 +85,7 @@ adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
 source(file.path(folder, "methods", "adapt_utils.R"))
-adapt_performance_noboot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
+adapt_performance <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
                                                        adapt_result=adapt_output,
                                                        nullcase=F))
 
@@ -239,10 +239,10 @@ linda_performance <- evaluation_linda(taxa_truth=taxa_info,
 # aggregate all the performances
 Methods <- c("ADAPT", "ALDEx2", "Maaslin2", "metagenomeSeq", "DACOMP", "ZicoSeq", "ANCOM",
              "ANCOMBC", "LinDA")
-FDRs <- c(adapt_performance_noboot$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
+FDRs <- c(adapt_performance$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
           metagenomeseq_performance$FDR, dacomp_performance$FDR, zicoseq_performance$FDR, 
           ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR)
-Powers <- c(adapt_performance_noboot$Power, aldex_performance$Power, maaslin2_performance$Power,
+Powers <- c(adapt_performance$Power, aldex_performance$Power, maaslin2_performance$Power,
             metagenomeseq_performance$Power, dacomp_performance$Power, zicoseq_performance$Power, 
             ancom_performance$Power, ancombc_performance$Power, linda_performance$Power)
 Durations <- c(adapt_duration_noboot, aldex_duration, maaslin2_duration,

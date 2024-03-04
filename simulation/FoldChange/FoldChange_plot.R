@@ -95,9 +95,6 @@ Power_plot_2 <- ggplot(subset_summaries_df_2, aes(x=FoldChange, y=Power, color=i
 Power_plot_2
 
 
-
-
-
 write.csv(all_summaries_df, file.path(folder,  "FoldChange_Summary.csv"),
           row.names=F)
 

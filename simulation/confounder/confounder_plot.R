@@ -32,8 +32,6 @@ for (choice in choices){
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
   
-  # results_summary <- results_summary %>% filter(Method != "ADAPT_noboot") %>%
-  #   mutate(Method=replace(Method, Method == "ADAPT_boot", "ADAPT"))
   
   results_summary$propcf <- as.character(settings_df$propcf[choice]*100)
   results_summary$corr <- settings_df$cf_main_corr[choice]
