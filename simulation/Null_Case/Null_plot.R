@@ -7,9 +7,10 @@ library(ggrepel)
 
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/Null_Case"
 
-settings_df <- expand.grid(nSample=c(50, 100),
-                           balance_depth = c("Unbalanced Library Size", "Balanced Library Size"),
-                           adj_depth = c("NoLibAdj", "LibAdj"))
+settings_df <- expand.grid(nSample=c("Sample Size = 50", "Sample Size = 100"),
+                           nTaxa=500,
+                           depth_fold=c("Balanced Library Size", "Unbalanced Library Size (4-fold)",
+                                        "Unbalanced Library Size (10-fold)"))
 
 
 all_results <- list()
@@ -18,7 +19,6 @@ files <- list.files(file.path(folder, 'experiments'))
 
 choices <- seq(1, nrow(settings_df))
 for (choice in choices){
-  
   name_filter <- grepl(sprintf("experiment_%d_", choice), 
                        files)
   subset_files <- files[name_filter]
@@ -27,119 +27,57 @@ for (choice in choices){
   
   results_df <- do.call(rbind, results)
   
-  # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
-  results_df$nSample <- settings_df$nSample[choice]
-  results_df$balance_depth<- settings_df$balance_depth[choice]
-  results_df$adj_depth <- settings_df$adj_depth[choice]
-  all_results[[choice]] <- results_df
   
+  results_df$nSample <- settings_df$nSample[choice]
+  results_df$depth_fold <- settings_df$depth_fold[choice]
+  all_results[[choice]] <- results_df
 }
 
 all_results_df <- do.call(rbind, all_results)
-subset_results_noadj <- all_results_df %>% filter(nSample==100 & adj_depth == "NoLibAdj")
-subset_results_noadj$isADAPT <- subset_results_noadj$Method == "ADAPT"
-subset_results_noadj$balance_depth <- factor(subset_results_noadj$balance_depth,
-                                             levels=c("Balanced Library Size", "Unbalanced Library Size"))
-subset_noadj_summary <- subset_results_noadj %>% group_by(Method, balance_depth) %>%
-  summarise(FPR_1=median(FPR_1, na.rm=T), FPR_5 = median(FPR_5, na.rm=T), FPR_10=median(FPR_10, na.rm=T))
+# subset_results <- all_results_df %>% filter(Method != "DACOMP")
+all_results_df$isADAPT <- all_results_df$Method == "ADAPT"
+all_results_df$nSample <- factor(all_results_df$nSample,
+                                 levels=c("Sample Size = 50", "Sample Size = 100"))
+all_results_df$depth_fold <- factor(all_results_df$depth_fold,
+                                  levels=c("Balanced Library Size", "Unbalanced Library Size (4-fold)",
+                                           "Unbalanced Library Size (10-fold)"))
+
+all_results_df$Method[all_results_df$Method == "Maaslin2"] <- "MaAsLin2" 
+
+all_summary <- all_results_df %>% group_by(Method, nSample, depth_fold) %>%
+  summarise(FPR_1=mean(FPR_1, na.rm=T), FPR_5 = mean(FPR_5, na.rm=T), FPR_10=mean(FPR_10, na.rm=T),
+            FWE_1 = mean(FWE_1, na.rm=T))
 
 
 manual_color <- c("#666666", "#0066ff")
 
-FPR_1_noadj_plot <- ggplot(subset_results_noadj, aes(x=Method, y=FPR_1, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.01, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.15))+
-  facet_grid(cols=vars(balance_depth)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.01") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
 
 
-FPR_1_noadj_plot
+# remove the cases corresponding to 4-fold sequencing depth difference
+subset_results_df <- all_results_df %>% filter(depth_fold != "Unbalanced Library Size (4-fold)")
+subset_results_df$depth_fold <- as.character(subset_results_df$depth_fold)
+subset_results_df$depth_fold[subset_results_df$depth_fold == "Unbalanced Library Size (10-fold)"] = "Unbalanced Library Size"
 
-FPR_5_noadj_plot <- ggplot(subset_results_noadj, aes(x=Method, y=FPR_5, color=isADAPT, group=Method)) +
+FPR_5_plot <- ggplot(subset_results_df, aes(x=Method, y=FPR_5, color=isADAPT, group=Method)) +
   geom_boxplot() +
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.3))+
-  facet_grid(cols=vars(balance_depth)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.05") + theme_bw() + 
-  theme(text=element_text(size=14),
+  scale_y_continuous(limits=c(0, 0.6), breaks=seq(0, 0.6, 0.1))+
+  facet_grid(rows=vars(depth_fold), cols=vars(nSample)) + scale_color_manual(values=manual_color)+
+  xlab("") + ylab("") + theme_bw() + 
+  theme(text=element_text(size=12),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
+        axis.title=element_blank(),
+        legend.position = "None",
+        strip.text = element_text(size = 10))
 
-
-FPR_5_noadj_plot
-
-FPR_10_noadj_plot <- ggplot(subset_results_noadj, aes(x=Method, y=FPR_10, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.1, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.4))+
-  facet_grid(cols=vars(balance_depth)) + scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.1") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
-
-
-FPR_10_noadj_plot
-
-
-subset_results_adj <- all_results_df %>% filter(nSample==100 & adj_depth == "LibAdj" & balance_depth=="Unbalanced Library Size") %>% 
-  filter(Method %in% c("ADAPT", "ALDEx2", "ANCOMBC", "LinDA", "Maaslin2", "ZicoSeq"))
-subset_results_adj$isADAPT <- subset_results_adj$Method == "ADAPT"
-subset_results_adj$balance_depth <- factor(subset_results_adj$balance_depth,
-                                             levels=c("Balanced Library Size", "Unbalanced Library Size"))
-subset_adj_summary <- subset_results_adj %>% group_by(Method, balance_depth) %>%
-  summarise(FPR_1=median(FPR_1, na.rm=T), FPR_5 = median(FPR_5, na.rm=T), FPR_10=median(FPR_10, na.rm=T))
+FPR_5_plot
 
 
 
-FPR_1_adj_plot <- ggplot(subset_results_adj, aes(x=Method, y=FPR_1, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.01, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.1))+
-  scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.01") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
 
-
-FPR_1_adj_plot
-
-
-FPR_5_adj_plot <- ggplot(subset_results_adj, aes(x=Method, y=FPR_5, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.05, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.25))+
-  scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.05") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
-
-
-FPR_5_adj_plot
-
-
-FPR_10_adj_plot <- ggplot(subset_results_adj, aes(x=Method, y=FPR_10, color=isADAPT, group=Method)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0.1, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.35))+
-  scale_color_manual(values=manual_color)+
-  xlab("Method") + ylab("False Positive Rates at level of 0.1") + theme_bw() + 
-  theme(text=element_text(size=14),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-        legend.position = "None")
-
-
-FPR_10_adj_plot
-
-write.csv(subset_noadj_summary, file.path(folder, "Null_LibSize_Noadjust_performances.csv"),
+write.csv(all_summary, file.path(folder, "Null_performances.csv"),
           row.names=F)
 
-write.csv(subset_adj_summary, file.path(folder, "Null_LibSize_adjust_performances.csv"),
-          row.names=F)
+
+
 

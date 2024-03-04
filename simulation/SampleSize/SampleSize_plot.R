@@ -31,8 +31,7 @@ for (choice in choices){
     summarise(FDR=mean(FDR, na.rm=T),
               Power=mean(Power, na.rm=T),
               Duration=mean(Duration, na.rm=T))
-  
-  # results_summary <- results_summary %>% filter(!Method %in% c("ADAPT_boot", "ADAPT_noboot", "LOCOM"))
+
   
   results_summary$SampleSize<- as.character(settings_df$nSample[choice])
   results_summary$Direction <- settings_df$direction[choice]
@@ -42,16 +41,6 @@ for (choice in choices){
 
 all_summaries_df <- do.call(rbind, all_summaries)
 all_summaries_df <- all_summaries_df %>% filter(SampleSize != "30")
-# all_summaries_df$FDRLabel <- ""
-# all_summaries_df$PowerLabel <- ""
-# FDRlabel_mask <- all_summaries_df$FDR > 0.1 & (all_summaries_df$SampleSize == "50" | all_summaries_df$SampleSize == "200")
-# all_summaries_df$FDRLabel[FDRlabel_mask] <- 
-#   all_summaries_df$Method[FDRlabel_mask]
-# all_summaries_df$FDRLabel[all_summaries_df$SampleSize == "50" & all_summaries_df$Method=="ADAPT"] <- "ADAPT"
-# 
-# all_summaries_df$PowerLabel[all_summaries_df$SampleSize=="200"] <- 
-#   all_summaries_df$Method[all_summaries_df$SampleSize=="200"]
-
 all_summaries_df$SampleSize <- factor(all_summaries_df$SampleSize, 
                                   levels=c( "50", "80", "100", "150", "200"))
 all_summaries_df$Direction <- factor(all_summaries_df$Direction, 
@@ -60,34 +49,67 @@ all_summaries_df$isADAPT <- all_summaries_df$Method == "ADAPT"
 
 
 
-
+# balanced, FDR
 manual_color <- c("#666666", "#0066ff")
-
-FDR_plot <- ggplot(all_summaries_df, aes(x=SampleSize, y=FDR, color=isADAPT, group=Method)) +
+subset_summaries_df_1 <- all_summaries_df %>% filter(Direction == "Balanced Change")
+FDR_plot_1 <- ggplot(subset_summaries_df_1, aes(x=SampleSize, y=FDR, color=isADAPT, group=Method)) +
   geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
   geom_hline(yintercept=0.05, linetype="dotted", color="red") +
-  scale_y_continuous(limits=c(0, 0.2))+
-  facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
+  scale_y_continuous(limits=c(0, 0.2), breaks=seq(0, 0.2, 0.05))+
+  scale_color_manual(values=manual_color)+
   xlab("Sample Size") + ylab("False Discovery Rate") + theme_bw() +
-  theme(text=element_text(size=14), legend.position = "None")
+  theme(text=element_text(size=14), legend.position = "None",
+        axis.title.x=element_blank(), axis.title.y=element_blank())
 
 
-FDR_plot
+FDR_plot_1
 
-Power_plot <- ggplot(all_summaries_df, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
+
+# unbalanced, FDR
+subset_summaries_df_2 <- all_summaries_df %>% filter(Direction == "Unbalanced Change")
+FDR_plot_2 <- ggplot(subset_summaries_df_2, aes(x=SampleSize, y=FDR, color=isADAPT, group=Method)) +
+  geom_point(size=1.4, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
+  geom_hline(yintercept=0.05, linetype="dotted", color="red") +
+  scale_y_continuous(limits=c(0, 0.2), breaks=seq(0, 0.2, 0.05))+
+  scale_color_manual(values=manual_color)+
+  xlab("Sample Size") + ylab("False Discovery Rate") + theme_bw() +
+  theme(text=element_text(size=14), legend.position = "None",
+        axis.title.x=element_blank(), axis.title.y=element_blank(), axis.text.y=element_blank())
+
+
+FDR_plot_2
+
+
+
+# balanced, Power
+Power_plot_1 <- ggplot(subset_summaries_df_1, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
   geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
-  scale_y_continuous(limits=c(0, 1))+
-  facet_grid(cols=vars(Direction)) + scale_color_manual(values=manual_color)+
+  scale_y_continuous(limits=c(0, 1), breaks=seq(0, 1, 0.1))+
+  scale_color_manual(values=manual_color)+
   xlab("Sample Size") + ylab("Power") + theme_bw() + 
-  theme(text=element_text(size=14), legend.position = "None")
+  theme(text=element_text(size=14), legend.position = "None",
+        axis.title.x=element_blank(), axis.title.y=element_blank())
 
+Power_plot_1
 
-Power_plot
+# unbalanced, Power
+Power_plot_2 <- ggplot(subset_summaries_df_2, aes(x=SampleSize, y=Power, color=isADAPT, group=Method)) +
+  geom_point(size=1.2, alpha=0.8) + geom_line(linewidth=0.8, alpha=0.7) + 
+  scale_y_continuous(limits=c(0, 1), breaks=seq(0, 1, 0.1))+
+  scale_color_manual(values=manual_color)+
+  xlab("Sample Size") + ylab("Power") + theme_bw() + 
+  theme(text=element_text(size=14), legend.position = "None",
+        axis.title.x=element_blank(), axis.title.y=element_blank(), axis.text.y=element_blank())
+
+Power_plot_2
+
 
 write.csv(all_summaries_df, 
           file.path(folder, "SampleSize_summary.csv"),
           row.names=F)
 
+
+# the duration of all methods with respect to the sample size (not used)
 duration_df <- all_summaries_df %>% group_by(Method, SampleSize) %>%
   summarise(Duration=mean(Duration))
 duration_df$isADAPT <- duration_df$Method == "ADAPT"
@@ -97,8 +119,10 @@ time_plot <- ggplot(duration_df, aes(x=SampleSize, y=Duration, color=isADAPT, gr
   scale_y_continuous(trans='log10', 
                      breaks = trans_breaks("log10", function(x) 10^x),
                      labels = trans_format("log10", math_format(10^.x))) +
+  annotation_logticks(sides="l")+
   scale_color_manual(values=manual_color)+
   xlab("Sample Size") + ylab("Time (second)") + theme_bw()+
-  theme(text=element_text(size=14), legend.position = "None")
+  theme(text=element_text(size=14), legend.position = "None",
+        axis.title.x=element_blank(), axis.title.y=element_blank())
 
 time_plot

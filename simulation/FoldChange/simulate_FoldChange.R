@@ -85,29 +85,15 @@ adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
 source(file.path(folder, "methods", "adapt_utils.R"))
-adapt_performance_noboot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
+adapt_performance <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
                                                        adapt_result=adapt_output,
                                                        nullcase=F))
 
-
-# begin <- proc.time()
-# adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
-#                       covar="main", adjust="confounder", prevalence_cutoff=0.05,
-#                       taxa_are_rows = T, boot=T)
-# adapt_time <- proc.time() - begin
-# adapt_duration_boot <- adapt_time[3]
-# adapt_performance_boot <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
-#                                                        adapt_result=adapt_output,
-#                                                        nullcase=F))
 
 
 # Aldex2
 suppressMessages(library(ALDEx2))
 begin <- proc.time()
-# mm <- model.matrix(~main+confounder, metadata_df)
-# aldex_perm <- suppressMessages(aldex.clr(count_table, mm, mc.samples=4, denom="all"))
-# aldex_result <- aldex.glm(aldex_perm, mm)
-# aldex_time <- proc.time() - begin
 aldex_result <- suppressMessages(aldex(reads=count_table, conditions=metadata_df$main, mc.samples=128,
                                        test="t"))
 aldex_time <- proc.time() - begin
@@ -221,49 +207,6 @@ ancom_performance <- evaluation_ancom(taxa_truth=taxa_info,
                                       nullcase=F)
 
 
-# RAIDA
-# library(RAIDA)
-# count_df <- as.data.frame(count_table)
-# control_ids <- which(metadata_df$main == 0)
-# case_ids <- which(metadata_df$main == 1)
-# count_df <- count_df[, c(control_ids, case_ids)]
-# begin <- proc.time()
-# raida_output <- raida(c.data=count_df, n.lib=c(length(control_ids), length(case_ids)))
-# raida_time <- proc.time() - begin
-# raida_duration <- raida_time[3]
-# source(file.path(folder, "methods", "raida_utils.R"))
-# raida_performance <- evaluation_raida(taxa_truth=taxa_info, 
-#                                       raida_result=raida_output,
-#                                       nullcase=F)
-
-# RDB
-# library(RDB)
-# transpose_count_mat <- t(count_table)
-# transpose_composition <- transpose_count_mat / rowSums(transpose_count_mat)
-# begin <- proc.time()
-# RDB_output <- rdb(P=transpose_composition, Z=metadata_df$main,
-#                   alpha=0.05, fdr=T)
-# rdb_duration <- proc.time() - begin
-# source(file.path(folder, "methods", "RDB_utils.R"))
-# rdb_performance <- evaluation_rdb(taxa_truth=taxa_info, 
-#                                   rdb_result = RDB_output,
-#                                   nullcase=F)
-
-
-# LOCOM
-# library(LOCOM)
-# ptm <- proc.time()
-# locom_output <- locom(otu.table=t(count_table),
-#                       Y=metadata_df$main, C=metadata_df$confounder, fdr.nominal=0.05, prev.cut=0.05,
-#                       n.perm.max=2e4, seed=1, Firth.thresh = 1,
-#                       n.cores=4)
-# locom_time <- proc.time() - ptm
-# locom_duration <- locom_time[3]
-# source(file.path(folder, "methods", "locom_utils.R"))
-# locom_performance <- evaluation_locom(taxa_info, locom_result=locom_output,
-#                                       nullcase=F)
-
-
 # ANCOMBC
 ptm <- proc.time()
 ancombc_output <- ancombc2(phyobj, fix_formula = 'main + confounder', p_adj_method='BH', global=T,
@@ -294,10 +237,10 @@ linda_performance <- evaluation_linda(taxa_truth=taxa_info,
 # aggregate all the performances
 Methods <- c("ADAPT", "ALDEx2", "Maaslin2", "metagenomeSeq", "DACOMP", "ZicoSeq", "ANCOM",
              "ANCOMBC", "LinDA")
-FDRs <- c(adapt_performance_noboot$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
+FDRs <- c(adapt_performance$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
           metagenomeseq_performance$FDR, dacomp_performance$FDR, zicoseq_performance$FDR, 
           ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR)
-Powers <- c(adapt_performance_noboot$Power, aldex_performance$Power, maaslin2_performance$Power,
+Powers <- c(adapt_performance$Power, aldex_performance$Power, maaslin2_performance$Power,
             metagenomeseq_performance$Power, dacomp_performance$Power, zicoseq_performance$Power, 
             ancom_performance$Power, ancombc_performance$Power, linda_performance$Power)
 Durations <- c(adapt_duration_noboot, aldex_duration, maaslin2_duration,
