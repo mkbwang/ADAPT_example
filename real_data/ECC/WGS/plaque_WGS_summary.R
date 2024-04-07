@@ -18,7 +18,9 @@ comparison_plaque <- comparison_plaque %>% dplyr::select(Taxa, ADAPT,
 detailed_metag_plaque <- comparison_plaque %>% 
   full_join(adapt_plaque_result, by="Taxa")
 sample_size <- nrow(sample_data(phy_metag_plaque))
-prevalence_count <- as.integer(sample_size * detailed_metag_plaque$prevalence)
+prevalence_count <- rowSums(otu_table(phy_metag_plaque) > 0)
+names(prevalence_count) <- gsub("[.]" , "", names(prevalence_count))
+prevalence_count <- prevalence_count[detailed_metag_plaque$Taxa]
 detailed_metag_plaque$prevalence <- sprintf(" %d/%d", prevalence_count, sample_size)
 detailed_metag_plaque$effect <- detailed_metag_plaque$effect * log10(exp(1)) # change natural log to log10
 write.csv(detailed_metag_plaque, file.path(folder, "detailed_WGS_plaque_result.csv"),
