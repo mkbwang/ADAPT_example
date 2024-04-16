@@ -16,11 +16,10 @@ metadata$WV <- 1*(metadata$geo_loc_name == "USA: WV")
 set.seed(1)
 # ADAPT
 library(ADAPT)
-adapt_output <- adapt(otu_table=count_table, metadata=metadata, covar="iscase",
-                      adjust=NULL, prevalence_cutoff=0.05, taxa_are_rows=F, boot=F)
-adapt_DAtaxa <- adapt_output$DA_Taxa
-adapt_details <- adapt_output$P_Value
-adapt_summary <- data.frame(Taxa = adapt_DAtaxa, ADAPT=adapt_details[adapt_DAtaxa,  "effect"] > 0)
+adapt_output <- adapt(input_data=phy_asv_month12, cond.var = "CaseEver", base.cond = "Control")
+adapt_DAtaxa <- adapt_output@signal
+adapt_details <- adapt_output@details
+adapt_summary <- data.frame(Taxa = adapt_DAtaxa, ADAPT=adapt_details[adapt_DAtaxa,  "log10foldchange"] > 0)
 adapt_summary$ADAPT <- 2*(adapt_summary$ADAPT-0.5)
 
 
