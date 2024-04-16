@@ -12,14 +12,15 @@ adapt_saliva_result <- cbind(adapt_saliva_result,
 all_DNAstrings <- as.character(phy_asv_saliva@refseq)
 all_DNAstrings <- all_DNAstrings[adapt_saliva_result$Taxa]
 adapt_saliva_result$DNAstring <- all_DNAstrings
-
+prev_counts <- colSums(otu_table(phy_asv_saliva) > 0)
 
 # First generate the supplementary table
 detailed_adapt_saliva_result <- comparison_saliva[, seq(1, 10)] %>%
   right_join(adapt_saliva_result, by="Taxa")
+detailed_adapt_saliva_result$prevalence <- prev_counts[detailed_adapt_saliva_result$Taxa]
 sample_size <- nrow(sample_data(phy_asv_saliva))
-prevalence_count <- as.integer(sample_size * detailed_adapt_saliva_result$prevalence)
-detailed_adapt_saliva_result$prevalence <- sprintf("%d/%d", prevalence_count, sample_size)
+prev_counts <- prev_counts[detailed_adapt_saliva_result$Taxa]
+detailed_adapt_saliva_result$prevalence <- sprintf("%d/%d", prev_counts, sample_size)
 detailed_adapt_saliva_result$effect <- detailed_adapt_saliva_result$effect * log10(exp(1)) # change natural log to log10
 write.csv(detailed_adapt_saliva_result, file.path(folder, "detailed_16S_saliva_12month_result.csv"),
           row.names=F)

@@ -1,5 +1,5 @@
 library(SparseDOSSA2)
-# # get the pretrained template
+# get the pretrained template
 # original_simulation <- SparseDOSSA2(template = "Stool",  # choose from "Stool", "Vaginal" or "IBD"
 #                                  new_features = TRUE,  # should new features be simulated
 #                                  n_sample = 100,  # number of samples to simulate
@@ -20,7 +20,7 @@ library(SparseDOSSA2)
 # original_median_abundance <- rep(0, length(original_pi0))
 # nonzero_mask <- original_pi0 < 0.5
 # truncated_quantile <- qnorm(0.5 - original_pi0[nonzero_mask])
-# original_median_abundance[nonzero_mask] <- exp(original_mu[nonzero_mask] + 
+# original_median_abundance[nonzero_mask] <- exp(original_mu[nonzero_mask] +
 #                                                  truncated_quantile*original_sigma[nonzero_mask])
 # original_median_relabd <- original_median_abundance / sum(original_median_abundance)
 # subset_taxa <- which(original_median_relabd > 2e-4)
@@ -64,7 +64,7 @@ SimulateSettings <- function (baseline,
   
   # check parameters validity
   DA_direction <- match.arg(direction)
-  stopifnot(propDA < 0.5 & propDA >= 0)
+  stopifnot(propDA < 0.9 & propDA >= 0)
   stopifnot(cf_main_corr >= 0 & cf_main_corr < 1)
 
   set.seed(seed)

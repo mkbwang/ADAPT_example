@@ -61,22 +61,20 @@ seqdepths <- colSums(count_table)
 seqdepth_filter <- seqdepths > seqdepth_cutoff
 count_table <- count_table[, seqdepth_filter, drop=F]
 metadata_df <- metadata_df[seqdepth_filter, ]
-metadata_df$logdepth <- log(colSums(count_table))
 
+
+suppressMessages(library(phyloseq))
+phyobj <- phyloseq(otu_table(count_table, taxa_are_rows = T),
+                   sample_data(metadata_df))
 
 
 # ADAPT
 suppressMessages(library(ADAPT))
 begin <- proc.time()
-
-adapt_output <- adapt(otu_table=count_table, metadata=metadata_df,
-                      covar="main", adjust=NULL, prevalence_cutoff=0.05, depth_cutoff=0,
-                      taxa_are_rows = T, boot=F)
-
-
+adapt_output <- adapt(input_data=phyobj, cond.var="main")
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
-source(file.path(folder, "methods", "adapt_utils.R"))
+source(file.path(folder, "methods_evaluation", "adapt_utils.R"))
 adapt_performance <- suppressMessages(evaluation_adapt(adapt_result=adapt_output,
                                                        nullcase=T))
 
@@ -183,9 +181,6 @@ zicoseq_performance <- evaluation_zicoseq(zicoseq_result=zicoseq_result,
 
 # ANCOMBC
 suppressMessages(library(ANCOMBC))
-suppressMessages(library(phyloseq))
-phyobj <- phyloseq(otu_table(count_table, taxa_are_rows = T),
-                   sample_data(metadata_df))
 ptm <- proc.time()
 ancombc_output <- ancombc2(phyobj, fix_formula = 'main', p_adj_method='BH', global=T,
                            group='main', struc_zero=FALSE, prv_cut=0.05, n_cl=4)  
