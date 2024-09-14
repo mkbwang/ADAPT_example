@@ -1,7 +1,7 @@
 
 rm(list=ls())
 
-folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
+folder <- "simulation"
 suppressMessages(source(file.path(folder, "SparseDOSSA_setting.R")))
 suppressMessages(source(file.path(folder, "MIDASim_setting.R")))
 
@@ -29,12 +29,12 @@ choice <- opt$choice
 myseed <- opt$seed
 
 
-baseline_params <- readRDS('/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation/midasim_baseline.rds')
+baseline_params <- readRDS('simulation/midasim_baseline.rds')
 
 midasim_setting <- SimulateSettings(baseline=baseline_params,
                                         nSample=settings_df$nSample[choice],
                                         nTaxa=settings_df$nTaxa[choice],
-                                        seqdepth_logmean=log(settings_df$seqdepth_mean[choice]),
+                                        seqdepth_logmean=log(2e4),
                                         seqdepth_logsd=0.5,
                                         propDA=settings_df$propDA[choice],
                                         main_mean_logfold=settings_df$main_mean_logfold[choice],
@@ -44,13 +44,14 @@ midasim_setting <- SimulateSettings(baseline=baseline_params,
                                         cf_main_corr=settings_df$cf_main_corr[choice],
                                         cf_mean_logfold = settings_df$cf_mean_logfold[choice],
                                         seed=myseed)
-
+# midasim_setting$taxa_info$log_main_eff <- c(rep(c(1.6, -1.6), 25), rep(0, 450))
+# midasim_setting$taxa_info$isDA <- c(rep(TRUE, 50), rep(FALSE, 450))
 
 
 metadata_df <- data.frame(midasim_setting$sample_metadata)
 colnames(metadata_df) <- c("main", "confounder")
 rownames(metadata_df) <- sprintf("Sample%d", seq(1, nrow(metadata_df)))
-
+# View(midasim_setting$taxa_info)
 
 count_table <- midasim_simulate(midasim_setting)
 colnames(count_table) <- sprintf("Taxon%d", seq(1, nrow(midasim_setting$taxa_info)))
@@ -76,10 +77,10 @@ phyobj <- phyloseq(otu_table(count_table, taxa_are_rows = F),
                    sample_data(metadata_df))
 
 
-# ADAPT
+# ADAPT: fixed
 suppressMessages(library(ADAPT))
 begin <- proc.time()
-adapt_output <- adapt(input_data = phyobj, cond.var="main")
+adapt_output <- adapt(input_data = phyobj, cond.var="main", adj.var="confounder")
 adapt_time <- proc.time() - begin
 adapt_duration_noboot <- adapt_time[3]
 source(file.path(folder, "methods_evaluation", "adapt_utils.R"))
@@ -88,22 +89,22 @@ adapt_performance <- suppressMessages(evaluation_adapt(taxa_truth=taxa_info,
                                                        nullcase=F))
 
 
-# Aldex2
+# Aldex2: fixed
 suppressMessages(library(ALDEx2))
 begin <- proc.time()
-aldex_result <- suppressMessages(aldex(reads=count_table, conditions=metadata_df$main, mc.samples=128,
+aldex_result <- suppressMessages(aldex(reads=t(count_table), conditions=metadata_df$main, mc.samples=128,
                                        test="t"))
 aldex_time <- proc.time() - begin
 aldex_duration <- aldex_time[3]
-source(file.path(folder, "methods", "aldex2_utils.R"))
+source(file.path(folder, "methods_evaluation", "aldex2_utils.R"))
 aldex_performance <- suppressMessages(evaluation_aldex2(taxa_truth=taxa_info, 
                                                         aldex_result=aldex_result, test="ttest",
                                                         nullcase = F))
 
 
-# Maaslin2
+# Maaslin2: fixed
 suppressMessages(library(Maaslin2))
-count_df <- data.frame(count_table)
+count_df <- data.frame(t(count_table))
 begin <- proc.time()
 maaslin2_output <-invisible(Maaslin2(input_data=count_df, input_metadata=metadata_df,
                             output = file.path(folder, 'propDA', 'maaslin2_output', sprintf("seed_%d", myseed)),
@@ -123,7 +124,7 @@ maaslin2_performance <- suppressMessages(evaluation_maaslin2(taxa_truth=taxa_inf
 # MetagenomeSeq
 suppressMessages(library(metagenomeSeq))
 MRmetadata <- AnnotatedDataFrame(metadata_df)
-MRobj <- newMRexperiment(counts=count_table,
+MRobj <- newMRexperiment(counts=t(count_table),
                          phenoData=MRmetadata)
 begin <- proc.time()
 MRobj <- wrenchNorm(MRobj, condition=metadata_df$main)
@@ -131,19 +132,19 @@ mod <- model.matrix(~main, data=pData(MRobj))
 MRfit <- fitFeatureModel(MRobj, mod)
 metagenomeseq_time <- proc.time() - begin
 metagenomeseq_duration <- metagenomeseq_time[3]
-source(file.path(folder, "methods", "metagenomeseq_utils.R"))
+source(file.path(folder, "methods_evaluation", "metagenomeseq_utils.R"))
 metagenomeseq_performance <- suppressMessages(evaluation_metagenomeseq(taxa_truth=taxa_info,
                                            MR_result=MRfit, nullcase=F))
 
 
 
-# DACOMP
+# DACOMP: fixed
 library(dacomp)
 begin <- proc.time()
 selected_references <- dacomp.select_references(
-  X = t(count_table), verbose = F, run_in_parallel = T, Nr.Cores=4,
+  X = count_table, verbose = F, run_in_parallel = T, Nr.Cores=4,
   minimal_TA=10)
-updated_selected_references <- dacomp.validate_references(X = t(count_table), #Counts
+updated_selected_references <- dacomp.validate_references(X = count_table, #Counts
                                                           Y = metadata_df$main, #Traits
                                                           ref_obj = selected_references, #reference checked, must be object from dacomp.select_references(...)
                                                           test = DACOMP.TEST.NAME.WILCOXON, #Test used for checking, can be same test used in dacomp.test(...)
@@ -152,7 +153,7 @@ updated_selected_references <- dacomp.validate_references(X = t(count_table), #C
                                                           Reduction_Factor = 0.1, #multiplicative factor used for lowering the threshold for the number of reads required in reference taxa at each iteration
                                                           NR_perm = 1000, #number of permutations used for testing. should be at least 1/(Q_validation/ncol(X))
                                                           Verbose = F)
-dacomp_output <- dacomp.test(X = t(count_table), #counts data
+dacomp_output <- dacomp.test(X = count_table, #counts data
                           y = metadata_df$main, #phenotype in y argument
                           # obtained from dacomp.select_references(...):
                           ind_reference_taxa = updated_selected_references,
@@ -162,14 +163,14 @@ dacomp_output <- dacomp.test(X = t(count_table), #counts data
                           verbose = F)
 dacomp_time <- proc.time() - begin
 dacomp_duration <- dacomp_time[3]
-source(file.path(folder, "methods", "DACOMP_utils.R"))
+source(file.path(folder, "methods_evaluation", "DACOMP_utils.R"))
 dacomp_performance <- evaluation_dacomp(taxa_truth=taxa_info,
                                         dacomp_result=dacomp_output,
                                         nullcase=F)
 
 
 
-# ZicoSeq
+# ZicoSeq: fixed
 library(GUniFrac)
 begin <- proc.time()
 zicoseq_output <- ZicoSeq(meta.dat=metadata_df,
@@ -209,7 +210,7 @@ ancombc_output <- ancombc2(phyobj, fix_formula = 'main + confounder', p_adj_meth
                           group='main', struc_zero=FALSE, prv_cut=0.05, n_cl=4)
 ancombc_time <- proc.time() - ptm
 ancombc_duration <- ancombc_time[3]
-source(file.path(folder, "methods", "ancombc_utils.R"))
+source(file.path(folder, "methods_evaluation", "ancombc_utils.R"))
 ancombc_performance <- evaluation_ancombc(taxa_truth=taxa_info,
                                           ancombc_result=ancombc_output,
                                           nullcase=F)
