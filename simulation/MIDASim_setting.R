@@ -68,10 +68,11 @@ draw_uniform_pop <- function(template_mu, template_sigma, template_Q, libsizes,
   simulated_relabd <- MIDASim(modified_setup, only.rel=TRUE)
   
   # draw from multinomial distribution and get the final counts
-  count_mat <- round(libsizes * simulated_relabd$sim_rel)
-  # for (j in 1:num_samples){
-  #   count_mat[j, ] <- rmultinom(n=1, size=libsizes[j], prob=simulated_data$sim_rel[j, ])
-  # }
+  count_mat <- matrix(0, nrow=num_samples, ncol=num_taxa)
+  # count_mat <- round(libsizes * simulated_relabd$sim_rel)
+  for (j in 1:num_samples){
+    count_mat[j, ] <- rmultinom(n=1, size=libsizes[j], prob=simulated_relabd$sim_rel[j, ])
+  }
 
   return(count_mat)
   

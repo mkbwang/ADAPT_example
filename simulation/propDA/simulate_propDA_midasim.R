@@ -7,9 +7,9 @@ suppressMessages(source(file.path(folder, "MIDASim_setting.R")))
 
 settings_df <- expand.grid(nSample=100,
                            nTaxa=500,
-                           seqdepth_mean=2e4,
+                           seqdepth_mean=1e4,
                            propDA=c(0.05, 0.1, 0.2, 0.3), # c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
-                           main_mean_logfold=log(5),
+                           main_mean_logfold=log(4),
                            direction=c("balanced", "unbalanced"),
                            propcf=0,
                            cf_sd=1,
@@ -197,7 +197,7 @@ ancom_output <- ancom(data=phyobj, p_adj_method="BH", prv_cut=0.05,
                       main_var="main", adj_formula="confounder", n_cl=4)
 ancom_time <- proc.time()-begin
 ancom_duration <- ancom_time[3]
-source(file.path(folder, "methods", "ancom_utils.R"))
+source(file.path(folder, "methods_evaluation", "ancom_utils.R"))
 ancom_performance <- evaluation_ancom(taxa_truth=taxa_info,
                                       ancom_result=ancom_output$res,
                                       nullcase=F)
@@ -246,7 +246,7 @@ performance_summary <- data.frame(ID = myseed, Method=Methods,
                                   FDR = FDRs, Power=Powers, Duration=Durations)
 
 output_filename <- sprintf("experiment_%d_%d.rds", choice, myseed)
-saveRDS(performance_summary, file=file.path(folder, 'propDA', 'experiments', output_filename))
+saveRDS(performance_summary, file=file.path(folder, 'propDA', 'experiments_midasim', output_filename))
 
 
 
