@@ -4,6 +4,7 @@ rm(list=ls())
 folder <- "simulation"
 suppressMessages(source(file.path(folder, "SparseDOSSA_setting.R")))
 suppressMessages(source(file.path(folder, "MIDASim_setting.R")))
+suppressMessages(source(file.path(folder, "camp.R")))
 
 settings_df <- expand.grid(nSample=100,
                            nTaxa=500,
@@ -230,18 +231,31 @@ linda_performance <- evaluation_linda(taxa_truth=taxa_info,
                                       linda_result=linda_output,
                                       nullcase=F)
 
+# CAMP
+begin <- proc.time()
+camp_output <- camp(X=count_table, cov=metadata_df)
+camp_time <- proc.time() - begin
+camp_duration <- camp_time[3]
+source(file.path(folder, "methods_evaluation", "camp_utils.R"))
+camp_performance <- evaluation_camp(taxa_truth=taxa_info,
+                                    camp_result = camp_output,
+                                    nullcase=FALSE)
+
+
 
 # aggregate all the performances
 Methods <- c("ADAPT", "ALDEx2", "Maaslin2", "metagenomeSeq", "DACOMP", "ZicoSeq", "ANCOM",
-             "ANCOMBC", "LinDA")
+             "ANCOMBC", "LinDA", "CAMP")
 FDRs <- c(adapt_performance$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
           metagenomeseq_performance$FDR, dacomp_performance$FDR, zicoseq_performance$FDR, 
-          ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR)
+          ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR,
+          camp_performance$FDR)
 Powers <- c(adapt_performance$Power, aldex_performance$Power, maaslin2_performance$Power,
             metagenomeseq_performance$Power, dacomp_performance$Power, zicoseq_performance$Power, 
-            ancom_performance$Power, ancombc_performance$Power, linda_performance$Power)
+            ancom_performance$Power, ancombc_performance$Power, linda_performance$Power,
+            camp_performance$Power)
 Durations <- c(adapt_duration_noboot, aldex_duration, maaslin2_duration,
-               metagenomeseq_duration, dacomp_duration, zicoseq_duration, ancom_duration, ancombc_duration, linda_duration)
+               metagenomeseq_duration, dacomp_duration, zicoseq_duration, ancom_duration, ancombc_duration, linda_duration, camp_duration)
 performance_summary <- data.frame(ID = myseed, Method=Methods,
                                   FDR = FDRs, Power=Powers, Duration=Durations)
 
