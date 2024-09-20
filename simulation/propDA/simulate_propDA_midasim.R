@@ -1,7 +1,7 @@
 
 rm(list=ls())
 
-folder <- "simulation"
+folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
 suppressMessages(source(file.path(folder, "SparseDOSSA_setting.R")))
 suppressMessages(source(file.path(folder, "MIDASim_setting.R")))
 suppressMessages(source(file.path(folder, "camp.R")))
@@ -30,7 +30,7 @@ choice <- opt$choice
 myseed <- opt$seed
 
 
-baseline_params <- readRDS('simulation/midasim_baseline.rds')
+baseline_params <- readRDS(file.path(folder, 'midasim_baseline.rds'))
 
 midasim_setting <- SimulateSettings(baseline=baseline_params,
                                         nSample=settings_df$nSample[choice],

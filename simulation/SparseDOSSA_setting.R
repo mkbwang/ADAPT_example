@@ -52,7 +52,7 @@ library(SparseDOSSA2)
 # prevalences <- rowMeans(simulated_countmat > 0)
 
 
-baseline_params <- readRDS('simulation/sparsedossa_baseline.rds')
+# baseline_params <- readRDS('simulation/sparsedossa_baseline.rds')
 
 
 # simulation settings

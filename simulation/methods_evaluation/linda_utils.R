@@ -13,9 +13,7 @@ evaluation_linda <- function(linda_result, taxa_truth=NULL, nullcase=FALSE){
       FPR_1 = mean(raw_pval < 0.01, na.rm=TRUE),
       FPR_5 = mean(raw_pval < 0.05, na.rm=TRUE),
       FPR_10 = mean(raw_pval < 0.1, na.rm=TRUE),
-      FWE_1 = any(raw_pval < 0.01/length(raw_pval), na.rm=T),
-      FWE_5 = any(raw_pval < 0.05/length(raw_pval), na.rm=T),
-      FWE_10 = any(raw_pval < 0.1/length(raw_pval), na.rm=T))
+      num_FD = sum(adjusted_pval < 0.05))
   } else{
     linda_decision <- linda_df$reject
     

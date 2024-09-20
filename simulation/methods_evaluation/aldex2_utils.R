@@ -15,9 +15,7 @@ evaluation_aldex2<- function( aldex_result, test=c("ttest", "glm"), taxa_truth=N
       FPR_1 = mean(raw_pval < 0.01),
       FPR_5 = mean(raw_pval < 0.05),
       FPR_10 = mean(raw_pval < 0.1),
-      FWE_1 =any(raw_pval < 0.01/nrow(aldex_result)),
-      FWE_5 =any(raw_pval < 0.05/nrow(aldex_result)),
-      FWE_10 =any(raw_pval < 0.1/nrow(aldex_result)))
+      num_FD = sum(adjusted_pval < 0.05))
   } else{
     true_DA_taxa <- rownames(taxa_truth)[taxa_truth$log_main_eff != 0]
     DA_truth_binary <- taxa_truth$log_main_eff == 0

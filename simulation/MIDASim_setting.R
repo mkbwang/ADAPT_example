@@ -185,3 +185,26 @@ midasim_simulate <- function(midasim_setting){
 }
 
 
+midasim_null_simulate <- function(baseline, num_sample, num_taxa){
+  
+  repeats <- num_taxa / length(baseline$mu)
+  template_mu <- rep(baseline$mu, repeats)
+  template_sigma <- rep(baseline$sigma, repeats)
+  template_Q <- rep(baseline$Q, repeats)
+  template_tetra_corr <- diag(num_taxa)
+  template_rel_corr <- diag(num_taxa)
+  for (j in 1:repeats){
+    start_index <- (j-1)*length(baseline$mu)+1
+    end_index <- j*length(baseline$mu)
+    template_tetra_corr[seq(start_index, end_index), seq(start_index, end_index)] <- baseline$tetra_corr
+    template_rel_corr[seq(start_index, end_index), seq(start_index, end_index)] <- baseline$rel_corr
+  }
+
+  libsizes <- exp(rnorm(num_sample, mean=baseline$depth_fit[1], sd=baseline$depth_fit[2])) |> round()
+  
+  counts <- draw_uniform_pop(template_mu, template_sigma, template_Q, libsizes,
+                                    template_tetra_corr, template_rel_corr)
+  
+  return(counts)
+  
+}

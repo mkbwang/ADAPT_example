@@ -3,6 +3,9 @@ rm(list=ls())
 
 folder <- "/nfs/turbo/sph-ligen/wangmk/ADAPT_example/simulation"
 suppressMessages(source(file.path(folder, "SparseDOSSA_setting.R")))
+suppressMessages(source(file.path(folder, "camp.R")))
+
+baseline_params <- readRDS(file.path(folder, 'sparsedossa_baseline.rds'))
 
 
 settings_df <- expand.grid(nSample=100,
@@ -101,7 +104,7 @@ aldex_result <- suppressMessages(aldex(reads=count_table, conditions=metadata_df
                                        test="t"))
 aldex_time <- proc.time() - begin
 aldex_duration <- aldex_time[3]
-source(file.path(folder, "methods", "aldex2_utils.R"))
+source(file.path(folder, "methods_evaluation", "aldex2_utils.R"))
 aldex_performance <- suppressMessages(evaluation_aldex2(taxa_truth=taxa_info, 
                                                         aldex_result=aldex_result, test="ttest",
                                                         nullcase = F))
@@ -120,7 +123,7 @@ maaslin2_output <-invisible(Maaslin2(input_data=count_df, input_metadata=metadat
 maaslin2_time <- proc.time() - begin
 maaslin2_duration <- maaslin2_time[3]
 maaslin2_result <- maaslin2_output$results
-source(file.path(folder, "methods", "maaslin2_utils.R"))
+source(file.path(folder, "methods_evaluation", "maaslin2_utils.R"))
 maaslin2_performance <- suppressMessages(evaluation_maaslin2(taxa_truth=taxa_info,
                                                              maaslin2_result=maaslin2_result,
                                                              nullcase=F))
@@ -137,7 +140,7 @@ mod <- model.matrix(~main, data=pData(MRobj))
 MRfit <- fitFeatureModel(MRobj, mod)
 metagenomeseq_time <- proc.time() - begin
 metagenomeseq_duration <- metagenomeseq_time[3]
-source(file.path(folder, "methods", "metagenomeseq_utils.R"))
+source(file.path(folder, "methods_evaluation", "metagenomeseq_utils.R"))
 metagenomeseq_performance <- suppressMessages(evaluation_metagenomeseq(taxa_truth=taxa_info,
                                            MR_result=MRfit, nullcase=F))
 
@@ -168,7 +171,7 @@ dacomp_output <- dacomp.test(X = t(count_table), #counts data
                           verbose = F)
 dacomp_time <- proc.time() - begin
 dacomp_duration <- dacomp_time[3]
-source(file.path(folder, "methods", "DACOMP_utils.R"))
+source(file.path(folder, "methods_evaluation", "DACOMP_utils.R"))
 dacomp_performance <- evaluation_dacomp(taxa_truth=taxa_info,
                                         dacomp_result=dacomp_output,
                                         nullcase=F)
@@ -188,7 +191,7 @@ zicoseq_result <- cbind.data.frame(p.raw = zicoseq_output$p.raw,
                                 p.adj.fwer = zicoseq_output$p.adj.fwer)
 zicoseq_time <- proc.time()-begin
 zicoseq_duration <- zicoseq_time[3]
-source(file.path(folder, "methods", "zicoseq_utils.R"))
+source(file.path(folder, "methods_evaluation", "zicoseq_utils.R"))
 zicoseq_performance <- evaluation_zicoseq(taxa_truth=taxa_info,
                                           zicoseq_result=zicoseq_result,
                                           nullcase=F)
@@ -201,7 +204,7 @@ ancom_output <- ancom(data=phyobj, p_adj_method="BH", prv_cut=0.05,
                       main_var="main", adj_formula="confounder", n_cl=4)
 ancom_time <- proc.time()-begin
 ancom_duration <- ancom_time[3]
-source(file.path(folder, "methods", "ancom_utils.R"))
+source(file.path(folder, "methods_evaluation", "ancom_utils.R"))
 ancom_performance <- evaluation_ancom(taxa_truth=taxa_info,
                                       ancom_result=ancom_output$res,
                                       nullcase=F)
@@ -214,7 +217,7 @@ ancombc_output <- ancombc2(phyobj, fix_formula = 'main + confounder', p_adj_meth
                           group='main', struc_zero=FALSE, prv_cut=0.05, n_cl=4)
 ancombc_time <- proc.time() - ptm
 ancombc_duration <- ancombc_time[3]
-source(file.path(folder, "methods", "ancombc_utils.R"))
+source(file.path(folder, "methods_evaluation", "ancombc_utils.R"))
 ancombc_performance <- evaluation_ancombc(taxa_truth=taxa_info,
                                           ancombc_result=ancombc_output,
                                           nullcase=F)
@@ -229,23 +232,34 @@ linda_output <- linda(feature.dat=count_table,
                       n.cores=4)
 linda_time <- proc.time() - begin
 linda_duration <- linda_time[3]
-source(file.path(folder, "methods", "linda_utils.R"))
+source(file.path(folder, "methods_evaluation", "linda_utils.R"))
 linda_performance <- evaluation_linda(taxa_truth=taxa_info,
                                       linda_result=linda_output,
                                       nullcase=F)
 
+# CAMP
+begin <- proc.time()
+camp_output <- camp(X=t(count_table), cov=metadata_df)
+camp_time <- proc.time() - begin
+camp_duration <- camp_time[3]
+source(file.path(folder, "methods_evaluation", "camp_utils.R"))
+camp_performance <- evaluation_camp(camp_result = camp_output,
+                                    taxa_truth = taxa_info,
+                                    nullcase=FALSE)
+
 
 # aggregate all the performances
-Methods <- c("ADAPT", "ALDEx2", "Maaslin2", "metagenomeSeq", "DACOMP", "ZicoSeq", "ANCOM",
-             "ANCOMBC", "LinDA")
+Methods <- c("ADAPT", "ALDEx2", "MaAsLin2", "metagenomeSeq", "DACOMP", "ZicoSeq", "ANCOM",
+             "ANCOMBC", "LinDA", "CAMP")
 FDRs <- c(adapt_performance$FDR, aldex_performance$FDR, maaslin2_performance$FDR,
           metagenomeseq_performance$FDR, dacomp_performance$FDR, zicoseq_performance$FDR, 
-          ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR)
+          ancom_performance$FDR, ancombc_performance$FDR, linda_performance$FDR, camp_performance$FDR)
 Powers <- c(adapt_performance$Power, aldex_performance$Power, maaslin2_performance$Power,
             metagenomeseq_performance$Power, dacomp_performance$Power, zicoseq_performance$Power, 
-            ancom_performance$Power, ancombc_performance$Power, linda_performance$Power)
+            ancom_performance$Power, ancombc_performance$Power, linda_performance$Power, camp_performance$Power)
 Durations <- c(adapt_duration_noboot, aldex_duration, maaslin2_duration,
-               metagenomeseq_duration, dacomp_duration, zicoseq_duration, ancom_duration, ancombc_duration, linda_duration)
+               metagenomeseq_duration, dacomp_duration, zicoseq_duration, ancom_duration, 
+               ancombc_duration, linda_duration, camp_duration)
 performance_summary <- data.frame(ID = myseed, Method=Methods,
                                   FDR = FDRs, Power=Powers, Duration=Durations)
 

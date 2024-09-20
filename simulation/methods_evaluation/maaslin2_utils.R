@@ -20,9 +20,7 @@ evaluation_maaslin2 <- function(maaslin2_result, taxa_truth=NULL,  nullcase=FALS
     result <- list(FPR_1 = mean(pvals < 0.01),
                    FPR_5 = mean(pvals < 0.05),
                    FPR_10 = mean(pvals < 0.1),
-                   FWE_1 = any(pvals < 0.01/length(pvals), na.rm=T),
-                   FWE_5 = any(pvals < 0.05/length(pvals), na.rm=T),
-                   FWE_10 = any(pvals < 0.1/length(pvals), na.rm=T))
+                   num_FD = sum(qvals < 0.05))
   } else{
     
     true_DA_taxa <- rownames(taxa_truth)[taxa_truth$log_main_eff != 0]

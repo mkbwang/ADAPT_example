@@ -11,9 +11,7 @@ evaluation_zicoseq <- function(zicoseq_result, taxa_truth=NULL, nullcase=FALSE){
     result <- list(FPR_1 = mean(raw_pval < 0.01, na.rm=TRUE), 
                    FPR_5 = mean(raw_pval < 0.05, na.rm=TRUE),
                    FPR_10 = mean(raw_pval < 0.1, na.rm=TRUE), 
-                   FWE_1 = any(fwer_pval < 0.01, na.rm=T),
-                   FWE_5 = any(fwer_pval < 0.05, na.rm=T),
-                   FWE_10 = any(fwer_pval < 0.1, na.rm=T))
+                   num_FD=sum(adjusted_pval < 0.05))
   } else{
     
     zicoseq_decision <- adjusted_pval < 0.05
