@@ -44,6 +44,22 @@ all_results_df$depth_fold <- factor(all_results_df$depth_fold,
 
 all_results_df$Method[all_results_df$Method == "Maaslin2"] <- "MaAsLin2" 
 
+results_ADAPT <- all_results_df %>% filter(Method == "ADAPT") %>%
+  filter(depth_fold != "Unbalanced Library Size (4-fold)")
+results_ADAPT$depth_fold <- as.character(results_ADAPT$depth_fold)
+results_ADAPT$depth_fold[which(results_ADAPT$depth_fold == "Unbalanced Library Size (10-fold)")] = "Unbalanced Library Size"
+
+decision_counts_adapt <- results_ADAPT %>% group_by(nSample, depth_fold, num_FD) %>%
+  summarise(Count=n())
+
+decision_counts_adapt$num_FD <- as.character(decision_counts_adapt$num_FD)
+
+ggplot(decision_counts_adapt, aes(x=num_FD, y=Count)) + geom_bar(stat="identity", color="black", fill="lightblue")+
+  facet_grid(rows=vars(depth_fold), cols=vars(nSample)) +
+  xlab("Number of False Discoveries") + ylab("Frequency") + theme_bw() + coord_flip()+ 
+  theme(text=element_text(size=12),
+        strip.text = element_text(size = 10))
+
 all_summary <- all_results_df %>% group_by(Method, nSample, depth_fold) %>%
   summarise(FPR_1=mean(FPR_1, na.rm=T), FPR_5 = mean(FPR_5, na.rm=T), FPR_10=mean(FPR_10, na.rm=T))
 

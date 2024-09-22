@@ -12,7 +12,7 @@ evaluation_metagenomeseq <- function(MR_result, taxa_truth=NULL,  nullcase=FALSE
     result <- list(FPR_1 = mean(MR_coefficients$pvalues < 0.01,  na.rm=TRUE),
                    FPR_5 = mean(MR_coefficients$pvalues < 0.05,  na.rm=TRUE),
                    FPR_10 = mean(MR_coefficients$pvalues < 0.1,  na.rm=TRUE),
-                   num_FD = sum(MR_coefficients$adjPvalues < 0.05))
+                   num_FD = sum(MR_coefficients$adjPvalues < 0.05, na.rm=T))
   } else{
     true_DA_taxa <- rownames(taxa_truth)[taxa_truth$log_main_eff != 0]
     DA_truth_binary <- taxa_truth[rownames(MR_coefficients), 'log_main_eff'] == 0

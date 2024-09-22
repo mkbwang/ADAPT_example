@@ -36,11 +36,35 @@ for (choice in choices){
 all_results_df <- do.call(rbind, all_results)
 # subset_results <- all_results_df %>% filter(Method != "DACOMP")
 all_results_df$isADAPT <- all_results_df$Method == "ADAPT"
+
+
+
 all_results_df$nSample <- factor(all_results_df$nSample,
                                  levels=c("Sample Size = 50", "Sample Size = 100"))
 all_results_df$depth_fold <- factor(all_results_df$depth_fold,
                                   levels=c("Balanced Library Size", "Unbalanced Library Size (4-fold)",
                                            "Unbalanced Library Size (10-fold)"))
+
+results_ADAPT <- all_results_df %>% filter(Method == "ADAPT") %>%
+  filter(depth_fold != "Unbalanced Library Size (4-fold)")
+results_ADAPT$depth_fold <- as.character(results_ADAPT$depth_fold)
+results_ADAPT$depth_fold[which(results_ADAPT$depth_fold == "Unbalanced Library Size (10-fold)")] = "Unbalanced Library Size"
+
+decision_counts_adapt <- results_ADAPT %>% group_by(nSample, depth_fold, num_FD) %>%
+  summarise(Count=n())
+
+decision_counts_adapt$num_FD <- as.character(decision_counts_adapt$num_FD)
+
+ggplot(decision_counts_adapt, aes(x=num_FD, y=Count)) + geom_bar(stat="identity", color="black", fill="lightblue")+
+  facet_grid(rows=vars(depth_fold), cols=vars(nSample)) +
+  xlab("Number of False Discoveries") + ylab("Frequency") + theme_bw() + coord_flip()+ 
+  theme(text=element_text(size=12),
+        strip.text = element_text(size = 10))
+
+
+
+
+
 
 # all_results_df$Method[all_results_df$Method == "Maaslin2"] <- "MaAsLin2" 
 
