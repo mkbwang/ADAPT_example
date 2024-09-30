@@ -56,7 +56,7 @@ decision_counts_adapt$num_FD <- as.character(decision_counts_adapt$num_FD)
 
 ggplot(decision_counts_adapt, aes(x=num_FD, y=Count)) + geom_bar(stat="identity", color="black", fill="lightblue")+
   facet_grid(rows=vars(depth_fold), cols=vars(nSample)) +
-  xlab("Number of False Discoveries") + ylab("Frequency") + theme_bw() + coord_flip()+ 
+  xlab("Number of False Discoveries") + ylab("Frequency") + theme_bw() + 
   theme(text=element_text(size=12),
         strip.text = element_text(size = 10))
 
