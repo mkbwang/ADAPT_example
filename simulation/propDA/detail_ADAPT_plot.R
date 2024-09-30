@@ -21,7 +21,7 @@ files <- list.files(file.path(folder, 'details_ADAPT'))
 choices <- seq(1, nrow(settings_df))
 for (choice in choices){
   
-  name_filter <- grepl(sprintf("MIDASim_%d_", choice), # SparseDOSSA
+  name_filter <- grepl(sprintf("SparseDOSSA_%d_", choice), # SparseDOSSA
                        files)
   subset_files <- files[name_filter]
   all_results <- lapply(subset_files, 
@@ -65,7 +65,7 @@ ggplot(all_summaries_df, aes(x=propDA, y=contamination, color=refprop)) + geom_j
 
 # Overlap between detected taxa and alternative detected taxa
 ggplot(all_summaries_df, aes(x=propDA, y=IoU)) + geom_violin() + geom_boxplot(width=0.1)+
-  xlab("Proportion of DA Taxa among All Taxa (%)") + ylab("Intersection Over Union")+
+  xlab("Proportion of DA Taxa among All Taxa (%)") + ylab("Jaccard Similarity Coefficient")+
   facet_wrap(~Direction) + 
   theme_bw() + theme(text=element_text(size=12))
 
